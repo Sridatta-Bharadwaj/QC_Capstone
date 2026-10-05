@@ -1,20 +1,22 @@
 # Project Context Register
 
-_Last updated: 2026-10-06 — planning complete, ready for M0_
+_Last updated: 2026-10-06 — M0 merged; Wave 1 (M1, M3, M4, M6) in parallel_
 
 ## Current phase
-Planning done. Next: **M0 — Setup**. See `PLAN.md` for full milestone details.
+Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged into `main` via the gate (merge origin/main → typecheck+lint+test+build → `--no-ff` merge → re-check → push). See `PLAN.md`.
 
 ## Done
 - [x] Problem statement received (2026-10-06)
 - [x] Project scaffolding: `CLAUDE.md`, `CONTEXT.md` (2026-10-06)
 - [x] `PLAN.md` written: UI layout, architecture, stack, milestones, stretch goals (2026-10-06)
+- [x] Git + GitHub remote, `.gitignore`, CI workflow `.github/workflows/ci.yml` (2026-10-06)
+- [x] **M0 — Setup** (2026-10-06, branch `m0-setup`): Vite/React/TS + deps; ESLint/Prettier/Vitest; resizable layout (`src/components/Layout/AppShell.tsx`); tokens `src/styles/tokens.css`; theme `src/theme/themeStore.ts` + pre-paint script in `index.html`; `src/components/common/{Skeleton,Tabs}.tsx`; contracts `src/model/types.ts`, `src/engine/{index,types}.ts`, `src/worker/protocol.ts`; stores `src/model/{store,uiStore}.ts`; helpers `src/model/circuit.ts`; presets `src/model/presets.ts`
 
 ## In progress
-- (nothing)
+- Wave 1: M1 engine, M3 canvas, M4 Bloch, M6 codegen (parallel subagents in worktrees)
 
 ## Next up
-- [ ] **M0 — Setup:** Vite/React/TS project, deps, VS Code-style resizable layout, light/dark design tokens + theme toggle, bundled fonts/codicons, shared `<Skeleton>` component
+- Wave 2: M2 verify + M5 worker (after M1), M7 sync (after M3+M6) → Wave 3: M8 → Wave 4: M9 → independent review
 
 ## Left (backlog, in order)
 - [ ] M1 — Math engine + Vitest tests
@@ -44,6 +46,12 @@ Planning done. Next: **M0 — Setup**. See `PLAN.md` for full milestone details.
 | 2026-10-06 | Skeleton loaders only where real loading happens; no fake delays | User requirement; fake delays are slop |
 | 2026-10-06 | Final deliverables: presentation + live demo to prof | App must run offline (no CDNs at runtime) |
 | 2026-10-06 | After v1: plan stretch goals + revisit UI | v1 is a checkpoint |
+| 2026-10-06 | Qubit ordering in engine is big-endian: basis index = |q0 q1 … q(n-1)⟩, q0 = most significant bit | Textbook convention, matches how the canvas reads top→bottom; Qiskit (little-endian) handled in verify/ |
+| 2026-10-06 | A multi-qubit gate blocks every wire between its lowest and highest qubit in its column | Its vertical line crosses those wires; keeps placement unambiguous |
+| 2026-10-06 | Auto-placement = first column after the last gate touching the gate's span (ASAP layering) | "Earliest free column" alone could place a gate before an earlier one on the same wire |
+| 2026-10-06 | Theme toggle uses `codicon-color-mode` (deviation from "sun/moon") | Codicons has no sun/moon glyphs |
+| 2026-10-06 | ESLint (flat config) instead of the oxlint the Vite template now ships | User asked for ESLint |
+| 2026-10-06 | Skeleton shimmer uses a subtle linear-gradient sweep | PLAN asks for a shimmer; it is a loading indicator, not a surface gradient; disabled under reduced motion |
 
 ## Open questions
 - Course deadline — not yet known
@@ -52,6 +60,10 @@ Planning done. Next: **M0 — Setup**. See `PLAN.md` for full milestone details.
 - Before marking any UI milestone done, check it against PLAN.md → Design guidelines in **both** themes.
 - Qiskit uses **little-endian** qubit ordering (q0 = rightmost bit). Account for this in M2 verification.
 - Two-way sync: tag changes by source; never regenerate editor text from editor-originated changes.
+- Offline: `@monaco-editor/react` loads Monaco from a CDN by default — must use `loader.config({ monaco })` with the local `monaco-editor` package. drei `<Text>` fetches a font from a CDN unless given a local `font` — avoid or pass a bundled font.
+- Prettier must not touch `CLAUDE.md`/`PLAN.md`/`CONTEXT.md` (listed in `.prettierignore`).
+- Local hook "GateGuard" asks for facts before the first write of each new file; just answer and retry.
 
 ## Session log
 - 2026-10-06 — Planning session: problem statement, UI design, architecture, plan, stretch goals.
+- 2026-10-06 — Build session: git/CI set up; M0 done and merged; contracts written for parallel waves.

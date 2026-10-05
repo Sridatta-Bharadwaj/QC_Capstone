@@ -1,0 +1,135 @@
+/*
+ * Design tokens. Every colour in the app comes from here; components never hard-code colours.
+ * Light is the base; dark overrides under [data-theme='dark'] (set on <html> by theme/themeStore).
+ * Neutral greys + one restrained accent (muted teal) used only for selection, focus, active tabs.
+ * Bloch axes use fixed semantic colours: x = red, y = green, z = blue.
+ */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-bg: #ffffff; /* editor / canvas */
+  --color-bg-sidebar: #f3f3f3;
+  --color-bg-panel: #f8f8f8; /* bottom panel, code panel chrome */
+  --color-bg-titlebar: #ececec;
+  --color-bg-statusbar: #f3f3f3;
+  --color-bg-input: #ffffff;
+  --color-bg-hover: #e8e8e8;
+  --color-bg-selected: #d5ebe8; /* accent tint for selected list items */
+  --color-bg-skeleton: #e6e6e6;
+  --color-bg-skeleton-shine: #f2f2f2;
+
+  /* Borders */
+  --color-border: #e0e0e0;
+  --color-border-strong: #c6c6c6;
+  --color-separator-hover: #0f766e;
+
+  /* Text (AA on all surfaces above) */
+  --color-text: #1f1f1f;
+  --color-text-muted: #5c5c5c;
+  --color-text-subtle: #6b6b6b;
+  --color-text-on-accent: #ffffff;
+
+  /* Accent */
+  --color-accent: #0f766e;
+  --color-focus: #0f766e;
+
+  /* Status */
+  --color-error: #c4242b;
+  --color-warning: #8a5a00;
+  --color-ok: #1a7f37;
+
+  /* Bloch axes (physics convention) */
+  --axis-x: #d1242f;
+  --axis-y: #1a7f37;
+  --axis-z: #0969da;
+
+  /* Circuit */
+  --color-wire: #8c8c8c;
+  --color-gate-bg: #ffffff;
+  --color-gate-border: #5c5c5c;
+  --color-gate-text: #1f1f1f;
+  --color-gate-control: #1f1f1f;
+
+  /* Bloch scene */
+  --color-sphere-bg: #f8f8f8;
+  --color-sphere-wire: #c2c2c2;
+  --color-sphere-equator: #9e9e9e;
+  --color-bloch-vector: #1f1f1f;
+
+  /* Typography */
+  --font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 14px;
+  --lh: 1.4;
+
+  /* 4px spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* Shape */
+  --radius-sm: 2px;
+  --radius: 4px;
+
+  /* Chrome sizes */
+  --titlebar-h: 32px;
+  --statusbar-h: 22px;
+  --tabbar-h: 32px;
+
+  /* Motion */
+  --dur-fast: 80ms;
+  --dur: 150ms;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-bg: #1f1f1f;
+  --color-bg-sidebar: #181818;
+  --color-bg-panel: #181818;
+  --color-bg-titlebar: #181818;
+  --color-bg-statusbar: #181818;
+  --color-bg-input: #2a2a2a;
+  --color-bg-hover: #2a2d2e;
+  --color-bg-selected: #1d3b38;
+  --color-bg-skeleton: #2a2a2a;
+  --color-bg-skeleton-shine: #333333;
+
+  --color-border: #2b2b2b;
+  --color-border-strong: #3c3c3c;
+  --color-separator-hover: #4fb3a9;
+
+  --color-text: #cccccc;
+  --color-text-muted: #9d9d9d;
+  --color-text-subtle: #8f8f8f;
+  --color-text-on-accent: #0b1f1d;
+
+  --color-accent: #4fb3a9;
+  --color-focus: #4fb3a9;
+
+  --color-error: #f48771;
+  --color-warning: #cca700;
+  --color-ok: #4ec27a;
+
+  --axis-x: #f0605a;
+  --axis-y: #4ec27a;
+  --axis-z: #5aa7ff;
+
+  --color-wire: #6e6e6e;
+  --color-gate-bg: #252526;
+  --color-gate-border: #9d9d9d;
+  --color-gate-text: #e0e0e0;
+  --color-gate-control: #cccccc;
+
+  --color-sphere-bg: #181818;
+  --color-sphere-wire: #3a3a3a;
+  --color-sphere-equator: #5a5a5a;
+  --color-bloch-vector: #e0e0e0;
+}

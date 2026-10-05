@@ -1,0 +1,8 @@
+dist
+coverage
+node_modules
+package-lock.json
+verify/.venv
+CLAUDE.md
+PLAN.md
+CONTEXT.md

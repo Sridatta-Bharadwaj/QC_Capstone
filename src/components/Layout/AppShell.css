@@ -1,0 +1,72 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-shell__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.app-shell__sidebar {
+  background: var(--color-bg-sidebar);
+}
+
+.app-shell__canvas {
+  background: var(--color-bg);
+}
+
+.app-shell__code,
+.app-shell__bottom {
+  background: var(--color-bg-panel);
+}
+
+/* Panels lay out their children as a column that fills the panel. */
+.app-shell__sidebar,
+.app-shell__canvas,
+.app-shell__code,
+.app-shell__bottom {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 1px visible line with a wider invisible hit area. */
+.app-shell__separator {
+  position: relative;
+  flex-shrink: 0;
+  background: var(--color-border);
+  transition: background-color var(--dur) ease;
+}
+
+.app-shell__separator--v {
+  width: 1px;
+}
+
+.app-shell__separator--h {
+  height: 1px;
+}
+
+.app-shell__separator::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.app-shell__separator--v::after {
+  left: -3px;
+  right: -3px;
+}
+
+.app-shell__separator--h::after {
+  top: -3px;
+  bottom: -3px;
+}
+
+.app-shell__separator:hover,
+.app-shell__separator[data-separator='active'],
+.app-shell__separator:focus-visible {
+  background: var(--color-separator-hover);
+}
