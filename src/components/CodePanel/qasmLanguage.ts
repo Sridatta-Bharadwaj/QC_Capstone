@@ -46,6 +46,7 @@ export const qasmMonarch: languages.IMonarchLanguage = {
   tokenizer: {
     root: [
       [/\/\/.*$/, 'comment'],
+      [/\/\*/, 'comment', '@blockComment'],
       [/"[^"]*"/, 'string'],
       [
         /[A-Za-z_]\w*/,
@@ -64,11 +65,17 @@ export const qasmMonarch: languages.IMonarchLanguage = {
       [/->|[-+*/^]|==/, 'operator'],
       [/\s+/, 'white'],
     ],
+    // Inside /* ... */ (may span lines).
+    blockComment: [
+      [/[^*]+/, 'comment'],
+      [/\*\//, 'comment', '@pop'],
+      [/\*/, 'comment'],
+    ],
   },
 }
 
 export const qasmLanguageConfig: languages.LanguageConfiguration = {
-  comments: { lineComment: '//' },
+  comments: { lineComment: '//', blockComment: ['/*', '*/'] },
   brackets: [
     ['(', ')'],
     ['[', ']'],
