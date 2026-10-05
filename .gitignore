@@ -33,3 +33,6 @@ Thumbs.db
 # Tooling
 *.tsbuildinfo
 .eslintcache
+
+# Local browser-automation artifacts
+.playwright-mcp/
