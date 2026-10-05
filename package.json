@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:export": "tsx verify/export-engine.ts",
+    "verify": "npm run verify:export && tsx verify/run-python.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
