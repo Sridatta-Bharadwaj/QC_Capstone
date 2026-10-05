@@ -1,0 +1,32 @@
+.title-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--titlebar-h);
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  background: var(--color-bg-titlebar);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.title-bar__icon {
+  color: var(--color-text-muted);
+}
+
+.title-bar__title {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.title-bar__subtitle {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.title-bar__spacer {
+  flex: 1;
+}
