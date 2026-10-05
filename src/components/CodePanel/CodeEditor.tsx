@@ -1,8 +1,8 @@
 // Thin React wrapper around a Monaco editor. Lazy-loaded by CodePanel (Monaco is ~MBs).
 //
 // One editor instance, one Monaco *model* per `path`. Switching tabs swaps models and
-// restores each model's scroll/cursor ("view state"), so a future editable QASM tab (M7)
-// keeps its cursor and undo history across tab switches.
+// restores each model's scroll/cursor ("view state"), so the editable QASM tab keeps its
+// cursor and undo history across tab switches.
 //
 // We drive Monaco directly instead of using @monaco-editor/react: that package's loader
 // ships a jsDelivr CDN URL as its default, and the demo must run fully offline.
@@ -25,6 +25,10 @@ export interface CodeEditorProps {
   onChange?: (value: string) => void
   /** Problems shown as squiggles (owner 'qc'). */
   markers?: Problem[]
+  /** When set: move the cursor to this 1-based position, scroll it into view and focus. */
+  reveal?: { line: number; column: number } | null
+  /** Called after `reveal` has been applied (so the caller can clear the request). */
+  onRevealed?: () => void
   ariaLabel: string
 }
 
@@ -42,6 +46,8 @@ export default function CodeEditor({
   readOnly = false,
   onChange,
   markers = NO_MARKERS,
+  reveal = null,
+  onRevealed,
   ariaLabel,
 }: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -50,11 +56,13 @@ export default function CodeEditor({
   /** True while we write `value` into the model, so that write isn't reported as a user edit. */
   const applyingProp = useRef(false)
   const onChangeRef = useRef(onChange)
+  const onRevealedRef = useRef(onRevealed)
   const theme = useThemeStore((s) => s.theme)
 
   useEffect(() => {
     onChangeRef.current = onChange
-  }, [onChange])
+    onRevealedRef.current = onRevealed
+  }, [onChange, onRevealed])
 
   // Create the editor once.
   useEffect(() => {
@@ -147,6 +155,18 @@ export default function CodeEditor({
       }
     }
   }, [path, language, value])
+
+  // Go to a position (e.g. a clicked problem). Declared after the model effect above, so on a
+  // tab switch the right model is already active when this runs.
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor || !reveal) return
+    const position = { lineNumber: reveal.line, column: reveal.column }
+    editor.setPosition(position) // Monaco clamps out-of-range positions.
+    editor.revealPositionInCenterIfOutsideViewport(position)
+    editor.focus()
+    onRevealedRef.current?.()
+  }, [reveal, path])
 
   // Problems → squiggles on the current model.
   useEffect(() => {
