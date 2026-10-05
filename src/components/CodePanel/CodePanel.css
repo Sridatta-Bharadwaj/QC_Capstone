@@ -1,0 +1,44 @@
+/*
+ * Syntax colours for the code editor (Monaco reads these at runtime, see editorTheme.ts).
+ * Based on VS Code's Light+ / Dark+ palettes; all pass WCAG AA on --color-bg-panel.
+ */
+:root {
+  --syntax-comment: #3f7a3f;
+  --syntax-keyword: #0b4fb0;
+  --syntax-gate: #795e26;
+  --syntax-constant: #0b4fb0;
+  --syntax-number: #09734f;
+  --syntax-string: #a31515;
+}
+
+:root[data-theme='dark'] {
+  --syntax-comment: #6a9955;
+  --syntax-keyword: #569cd6;
+  --syntax-gate: #dcdcaa;
+  --syntax-constant: #4fc1ff;
+  --syntax-number: #b5cea8;
+  --syntax-string: #ce9178;
+}
+
+.code-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* The editor fills the tab panel exactly; Monaco does its own scrolling. */
+.code-panel .tabs__panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.code-editor {
+  position: absolute;
+  inset: 0;
+}
+
+.code-panel__skeleton .skeleton-lines {
+  gap: 8px;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) 44px;
+}
