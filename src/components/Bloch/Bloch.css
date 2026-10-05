@@ -1,0 +1,170 @@
+/* Bloch spheres panel. Colours only from tokens (src/styles/tokens.css). */
+
+.bloch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+
+.bloch-card {
+  display: flex;
+  flex-direction: column;
+  width: 184px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.bloch-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.bloch-card[data-selected='true'] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.bloch-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 24px;
+  padding: 0 var(--sp-1) 0 var(--sp-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.bloch-card__title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.bloch-card[data-selected='true'] .bloch-card__title {
+  color: var(--color-text);
+}
+
+.bloch-card__state {
+  font-size: var(--fs-xs);
+  color: var(--color-text-subtle);
+}
+
+.bloch-card__link {
+  margin-left: auto;
+  padding: 0 var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.bloch-card__link:hover {
+  background: var(--color-bg-hover);
+}
+
+.bloch-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.bloch-card__sphere {
+  display: flex;
+  justify-content: center;
+}
+
+.bloch-card__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--sp-2) var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.bloch-card__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  white-space: nowrap;
+}
+
+.bloch-card__key {
+  color: var(--color-text-muted);
+}
+
+.bloch-card__value {
+  color: var(--color-text);
+}
+
+.bloch-card__value + .bloch-card__key {
+  margin-left: var(--sp-2);
+}
+
+.bloch-card__mixed {
+  margin: 2px 0 0;
+  font-family: var(--font-ui);
+  color: var(--color-text-muted);
+}
+
+/* The 3D canvas (transparent: the card colour shows through) and its label overlay. */
+.bloch-sphere {
+  position: relative;
+  overflow: hidden;
+}
+
+.bloch-sphere canvas {
+  display: block;
+}
+
+.bloch-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden; /* shown once the first frame has positioned it */
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bloch-label--x {
+  color: var(--axis-x);
+}
+
+.bloch-label--y {
+  color: var(--axis-y);
+}
+
+.bloch-label--z {
+  color: var(--axis-z);
+}
+
+/* Skeleton for one card while results are not available yet. */
+.bloch-card--skeleton {
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  cursor: default;
+}
+
+.bloch-card--skeleton:hover {
+  border-color: var(--color-border);
+}
+
+.bloch-card--skeleton .skeleton-bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  width: 100%;
+}
