@@ -1,0 +1,389 @@
+/* Teaching views: Density Matrices and Partial Trace Steps tabs.
+   Colours only from tokens (src/styles/tokens.css). */
+
+.teaching {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+/* Sticky row with the qubit selector and the section title. */
+.teaching-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 32px;
+  margin: 0 calc(-1 * var(--sp-3));
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--color-bg-panel);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.teaching-toolbar__title {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.qubit-selector {
+  display: inline-flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.qubit-selector__button {
+  min-width: 32px;
+  height: 22px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-left: 1px solid var(--color-border-strong);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.qubit-selector__button:first-child {
+  border-left: 0;
+}
+
+.qubit-selector__button:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.qubit-selector__button[aria-pressed='true'] {
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+/* Prose */
+.teaching p {
+  margin: 0;
+  max-width: 88ch;
+  color: var(--color-text-muted);
+}
+
+.teaching strong,
+.teaching .teaching__em {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.teaching .math {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.teaching h3 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.teaching-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.teaching-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+
+.teaching-note {
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+
+/* Ket labels: the kept qubit's bit is bold + accent-underlined. */
+.ket {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.ket__bit--kept {
+  font-weight: 700;
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+/* Matrices */
+.matrix-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.matrix {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.matrix th {
+  padding: 2px var(--sp-2);
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.matrix thead th {
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.matrix tbody th {
+  border-right: 1px solid var(--color-border-strong);
+  text-align: right;
+}
+
+.matrix__cell {
+  position: relative;
+  padding: 3px var(--sp-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Flat tint, opacity ∝ |entry| (max 22 % keeps text contrast AA in both themes). */
+.matrix__cell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  opacity: calc(var(--mag, 0) * 0.22);
+  pointer-events: none;
+}
+
+.matrix__value {
+  position: relative;
+}
+
+.matrix__cell--zero {
+  color: var(--color-text-subtle);
+}
+
+.matrix__cell--marked,
+.matrix__cell--active {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.matrix__cell[tabindex] {
+  cursor: default;
+}
+
+.matrix--compact {
+  font-size: var(--fs-xs);
+}
+
+.matrix--compact th,
+.matrix--compact .matrix__cell {
+  padding: 1px var(--sp-1);
+}
+
+/* Key–value list of derived quantities next to the reduced ρ. */
+.quantities {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr;
+  column-gap: var(--sp-3);
+  row-gap: var(--sp-1);
+  align-items: baseline;
+  margin: 0;
+}
+
+.quantities dt {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.quantities dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.quantities .quantities__why {
+  font-family: var(--font-ui);
+  color: var(--color-text-muted);
+  white-space: normal;
+}
+
+.axis-x {
+  color: var(--axis-x);
+}
+
+.axis-y {
+  color: var(--axis-y);
+}
+
+.axis-z {
+  color: var(--axis-z);
+}
+
+/* Partial trace steps */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  column-gap: var(--sp-2);
+  counter-increment: step;
+}
+
+.step::before {
+  content: counter(step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.step__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.amplitudes,
+.terms {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.amplitudes th,
+.terms th {
+  padding: 2px var(--sp-3) 2px 0;
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.amplitudes td,
+.terms td {
+  padding: 1px var(--sp-3) 1px 0;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.amplitudes td.num,
+.terms td.num {
+  text-align: right;
+}
+
+.terms tr.terms__zero td {
+  color: var(--color-text-subtle);
+}
+
+.terms tfoot td {
+  border-top: 1px solid var(--color-border-strong);
+  font-weight: 600;
+}
+
+.trace-entries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-3);
+}
+
+.trace-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.trace-entry__formula {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+}
+
+.link-button {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.check-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--color-text-muted);
+}
+
+.check-line .codicon {
+  color: var(--color-ok);
+}
+
+.check-line--bad .codicon {
+  color: var(--color-error);
+}
+
+/* Skeleton: grid of grey cells */
+.matrix-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+}
+
+.matrix-skeleton__grid {
+  display: grid;
+  gap: var(--sp-1);
+}
