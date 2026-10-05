@@ -1,0 +1,313 @@
+.canvas {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.canvas__count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.canvas__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Circuit diagram */
+.circuit {
+  position: relative;
+  display: flex;
+  padding-bottom: var(--sp-2);
+  box-sizing: content-box;
+}
+
+.circuit__labels {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  flex-shrink: 0;
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border);
+}
+
+.circuit__wire-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 var(--sp-2);
+  border: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.circuit__wire-label:hover {
+  background: var(--color-bg-hover);
+}
+
+.circuit__wire-label[aria-pressed='true'] {
+  background: var(--color-bg-selected);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.circuit__wire-name {
+  color: var(--color-text);
+}
+
+.circuit__wire-init {
+  color: var(--color-text-muted);
+}
+
+.circuit__body {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.circuit__ruler {
+  display: flex;
+  color: var(--color-text-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.circuit__ruler span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circuit__wire {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-wire);
+}
+
+.circuit__cell {
+  position: absolute;
+}
+
+.circuit__drop {
+  position: absolute;
+  z-index: 1;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
+.circuit__drop--ok {
+  background: var(--color-bg-selected);
+  outline: 1px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.circuit__drop--invalid {
+  outline: 1px dashed var(--color-error);
+  outline-offset: -1px;
+}
+
+/* Gates */
+.gate {
+  position: absolute;
+  z-index: 2;
+  color: var(--color-gate-control);
+  pointer-events: none;
+}
+
+.gate--selected {
+  color: var(--color-accent);
+}
+
+.gate--dragging {
+  opacity: 0.35;
+}
+
+.gate__line {
+  position: absolute;
+  left: 50%;
+  width: 1.5px;
+  transform: translateX(-50%);
+  background: currentColor;
+}
+
+.gate__part {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Only the glyph itself is clickable, so empty space around it still reaches the cell. */
+.gate__part > * {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.gate__part:focus-visible {
+  outline: none;
+}
+
+.gate__part:focus-visible > * {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.gate-glyph {
+  display: block;
+}
+
+.gate-box {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  max-width: 48px;
+  height: 32px;
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--color-gate-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-gate-bg);
+  color: var(--color-gate-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  line-height: 1.1;
+  user-select: none;
+}
+
+.gate-box--param {
+  height: 36px;
+}
+
+.gate-box__angle {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gate--selected .gate-box {
+  border-color: var(--color-accent);
+  outline: 1px solid var(--color-accent);
+}
+
+.gate-drag-overlay {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+/* Footer: hints + inspector */
+.canvas__footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-panel);
+  font-size: var(--fs-sm);
+}
+
+.canvas__hint {
+  padding: var(--sp-1) var(--sp-3);
+  color: var(--color-text-muted);
+}
+
+.canvas__hint:empty {
+  display: none;
+}
+
+.canvas__hint--warn {
+  color: var(--color-warning);
+}
+
+.inspector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  min-height: 32px;
+  padding: var(--sp-1) var(--sp-3);
+}
+
+.inspector__gate {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.inspector__meta {
+  color: var(--color-text-muted);
+}
+
+.inspector__field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--color-text-muted);
+}
+
+.inspector__select,
+.inspector__input {
+  height: 22px;
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.inspector__input {
+  width: 96px;
+}
+
+.inspector__input[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.inspector__select:focus-visible,
+.inspector__input:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+  border-color: var(--color-focus);
+}
+
+.inspector__error {
+  color: var(--color-error);
+}
+
+.inspector__spacer {
+  flex: 1;
+}
+
+.inspector__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 22px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.inspector__button:hover {
+  background: var(--color-bg-hover);
+}

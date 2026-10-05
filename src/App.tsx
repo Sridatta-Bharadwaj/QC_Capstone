@@ -1,5 +1,11 @@
+import { CircuitDndProvider } from './components/Canvas/CircuitDndProvider'
 import { AppShell } from './components/Layout/AppShell'
 
 export default function App() {
-  return <AppShell />
+  // Drag-and-drop spans the sidebar (palette) and the canvas, so it wraps the whole shell.
+  return (
+    <CircuitDndProvider>
+      <AppShell />
+    </CircuitDndProvider>
+  )
 }
