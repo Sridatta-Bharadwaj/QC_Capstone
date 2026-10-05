@@ -1,9 +1,10 @@
 // Number formatting for the Bloch cards (mono, tabular, fixed decimals).
+// Same rules as the teaching views: a real minus sign (U+2212), never "−0.000".
+import { formatReal } from '../Teaching/format'
 
-/** Fixed-decimal string that never shows "-0.000" for tiny negative rounding noise. */
+/** Fixed-decimal string with a typographic minus; tiny negative rounding noise shows as 0. */
 export function formatFixed(value: number, digits = 3): string {
-  const text = value.toFixed(digits)
-  return Number(text) === 0 ? (0).toFixed(digits) : text
+  return formatReal(value, digits)
 }
 
 /** "(x, y, z)" with each component to 3 decimals. */

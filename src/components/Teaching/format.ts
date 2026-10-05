@@ -48,10 +48,10 @@ export function formatComplex(z: Complex, digits = 3): string {
   return `${formatReal(z.re, digits)} ${z.im < 0 ? MINUS : '+'} ${imText}i`
 }
 
-/** Small numbers like a max difference: "1.2e-16", or "0" when exactly zero. */
+/** Small numbers like a max difference: "1.2e−16" (real minus), or "0" when exactly zero. */
 export function formatScientific(value: number): string {
   if (value === 0) return '0'
-  return value.toExponential(1)
+  return value.toExponential(1).replace(/-/g, MINUS)
 }
 
 /**

@@ -107,3 +107,21 @@ export function formatAngle(radians: number, piSymbol = 'pi'): string {
   // Up to 12 significant digits (round-trips to ~1e-12), trailing zeros removed.
   return Number(radians.toPrecision(12)).toString()
 }
+
+/** Significant digits used when an angle is drawn inside a gate box. */
+const SHORT_DIGITS = 4
+
+/**
+ * Short angle label for the gate boxes on the canvas (they are only ~40 px wide):
+ * simple multiples of π as "π/2", "−3π/4"; anything else to 4 significant digits
+ * ("1.911"). Uses a real minus sign (U+2212). The full value goes in a tooltip.
+ */
+export function formatAngleShort(radians: number): string {
+  const exact = formatAngle(radians, 'π')
+  const text = /π/.test(exact) || exact === '0' ? exact.replace('*', '') : formatDecimal(radians)
+  return text.replace('-', '−')
+}
+
+function formatDecimal(radians: number): string {
+  return Number(radians.toPrecision(SHORT_DIGITS)).toString()
+}

@@ -9,11 +9,13 @@ import type { GatePartKind } from './placement'
 interface GateGlyphProps {
   kind: GatePartKind
   label: string
-  /** Formatted angle for rotation gates (box only). */
+  /** Short angle label for rotation gates (box only), e.g. "π/2" or "1.911". */
   angle?: string
+  /** Full angle shown as a tooltip (the short label may be rounded). */
+  angleTitle?: string
 }
 
-export function GateGlyph({ kind, label, angle }: GateGlyphProps) {
+export function GateGlyph({ kind, label, angle, angleTitle }: GateGlyphProps) {
   switch (kind) {
     case 'control':
       return (
@@ -46,7 +48,7 @@ export function GateGlyph({ kind, label, angle }: GateGlyphProps) {
         <span className={`gate-box${angle === undefined ? '' : ' gate-box--param'}`}>
           <span className="gate-box__label">{label}</span>
           {angle !== undefined && (
-            <span className="gate-box__angle" title={angle}>
+            <span className="gate-box__angle" title={angleTitle ?? angle}>
               {angle}
             </span>
           )}

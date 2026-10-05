@@ -2,7 +2,7 @@
 // Positions are computed from fixed cell sizes; all colours come from CSS (Canvas.css).
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import type { ReactNode } from 'react'
-import { formatAngle } from '../../model/angle'
+import { formatAngle, formatAngleShort } from '../../model/angle'
 import { occupiedSpan } from '../../model/circuit'
 import { GATES, type Circuit, type Operation } from '../../model/types'
 import { cellId, partId, type DragData, type DropData } from './dnd'
@@ -140,7 +140,10 @@ function GateView({ op, selected, dragging, onSelect }: GateViewProps) {
   const { min, max } = occupiedSpan(op.qubits)
   const parts = gateParts(op.gate)
   const roles = qubitRoles(op.gate)
+  // Full angle (aria-label, tooltip) and a short form that fits inside the gate box.
   const angle = info.parametric && op.angle !== undefined ? formatAngle(op.angle, 'π') : undefined
+  const shortAngle =
+    info.parametric && op.angle !== undefined ? formatAngleShort(op.angle) : undefined
 
   const className = [
     'gate',
@@ -179,7 +182,7 @@ function GateView({ op, selected, dragging, onSelect }: GateViewProps) {
           }
           onSelect={onSelect}
         >
-          <GateGlyph kind={parts[i]} label={info.label} angle={angle} />
+          <GateGlyph kind={parts[i]} label={info.label} angle={shortAngle} angleTitle={angle} />
         </GatePart>
       ))}
     </div>

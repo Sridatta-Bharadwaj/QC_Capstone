@@ -168,3 +168,18 @@
   gap: var(--sp-1);
   width: 100%;
 }
+
+/* While the worker is computing (> 150 ms) the cards are hidden under a skeleton overlay. */
+.bloch-panel {
+  position: relative;
+  min-height: 100%;
+}
+
+.bloch-panel__stale {
+  visibility: hidden;
+}
+
+.bloch-panel__overlay {
+  position: absolute;
+  inset: 0;
+}

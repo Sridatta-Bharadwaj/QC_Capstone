@@ -58,12 +58,12 @@ describe('sphere geometry', () => {
 })
 
 describe('number formatting', () => {
-  it('uses fixed 3 decimals and never prints -0.000', () => {
+  it('uses fixed 3 decimals and uses a real minus sign (U+2212) and never prints −0.000', () => {
     expect(formatFixed(1 / 3)).toBe('0.333')
     expect(formatFixed(-1e-12)).toBe('0.000')
-    expect(formatFixed(-0.70710678)).toBe('-0.707')
+    expect(formatFixed(-0.70710678)).toBe('−0.707')
     expect(formatVector({ x: Math.SQRT1_2, y: -1e-15, z: -Math.SQRT1_2 })).toBe(
-      '(0.707, 0.000, -0.707)',
+      '(0.707, 0.000, −0.707)',
     )
   })
 })

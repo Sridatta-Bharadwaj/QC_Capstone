@@ -128,6 +128,12 @@ export function CanvasView() {
           onSelectOp={selectOp}
           onSelectQubit={(q) => selectQubit(selectedQubit === q ? null : q)}
         />
+        {circuit.operations.length === 0 && (
+          <p className="canvas__empty" data-testid="canvas-empty">
+            No gates yet: every qubit is in |0⟩. Drag a gate from the palette onto a wire, click a
+            gate in the palette to append it, or pick a preset.
+          </p>
+        )}
       </div>
 
       <div className="canvas__footer">
