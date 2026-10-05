@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-06 — M0 merged; Wave 1 (M1, M3, M4, M6) in parallel_
+_Last updated: 2026-10-06 — M0–M6 merged; M7 + M8 in progress_
 
 ## Current phase
 Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged into `main` via the gate (merge origin/main → typecheck+lint+test+build → `--no-ff` merge → re-check → push). See `PLAN.md`.
@@ -11,20 +11,20 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - [x] `PLAN.md` written: UI layout, architecture, stack, milestones, stretch goals (2026-10-06)
 - [x] Git + GitHub remote, `.gitignore`, CI workflow `.github/workflows/ci.yml` (2026-10-06)
 - [x] **M0 — Setup** (2026-10-06, branch `m0-setup`): Vite/React/TS + deps; ESLint/Prettier/Vitest; resizable layout (`src/components/Layout/AppShell.tsx`); tokens `src/styles/tokens.css`; theme `src/theme/themeStore.ts` + pre-paint script in `index.html`; `src/components/common/{Skeleton,Tabs}.tsx`; contracts `src/model/types.ts`, `src/engine/{index,types}.ts`, `src/worker/protocol.ts`; stores `src/model/{store,uiStore}.ts`; helpers `src/model/circuit.ts`; presets `src/model/presets.ts`
+- [x] **M1 — Math engine** (2026-10-06, `m1-engine`): `src/engine/{complex,gates,simulator,partialTrace,bloch}.ts`, tests `tests/engine/` (direct vs explicit ρ agree to 1e-10 on presets + 200 random circuits, 10-qubit test)
+- [x] **M2 — Qiskit verification** (2026-10-06, `m2-verify`): `verify/{export-engine.ts,verify.py,run-python.ts,README.md,requirements.txt}`, `tsconfig.verify.json`, npm `verify`/`verify:export`. Result: 377 circuits (fixed + 240 random) all match Qiskit 2.5.2, max |Δρ| 2.1e-15
+- [x] **M3 — Canvas** (2026-10-06, `m3-canvas`): `src/components/Canvas/*` (placement.ts pure logic, CircuitGrid, GateGlyph, GateInspector, dnd), `src/components/Sidebar/*`, tests `tests/canvas/`
+- [x] **M4 — Bloch spheres** (2026-10-06, `m4-bloch`): `src/components/Bloch/*` (lazy three.js chunk, DOM labels), `BottomPanel/BlochPanel.tsx`, tests `tests/bloch/`
+- [x] **M5 — Web Worker** (2026-10-06, `m5-worker`): `src/worker/{engine.worker,handleRequest,engineClient,useEngineBridge}.ts`, mounted in `App.tsx`, tests `tests/worker/`
+- [x] **M6 — Code generation** (2026-10-06, `m6-codegen`): `src/codegen/{qasm,qiskit,index}.ts`, `src/components/CodePanel/*` (direct Monaco wrapper, lazy, offline), tests `tests/codegen/`
 
 ## In progress
-- Wave 1: M1 engine, M3 canvas, M4 Bloch, M6 codegen (parallel subagents in worktrees)
+- M7 two-way QASM sync and M8 teaching views (parallel subagents)
 
 ## Next up
-- Wave 2: M2 verify + M5 worker (after M1), M7 sync (after M3+M6) → Wave 3: M8 → Wave 4: M9 → independent review
+- M9 polish (after M7 + M8) → independent review → fix-review
 
 ## Left (backlog, in order)
-- [ ] M1 — Math engine + Vitest tests
-- [ ] M2 — Qiskit verification script
-- [ ] M3 — Circuit model + canvas (drag/drop)
-- [ ] M4 — Bloch spheres
-- [ ] M5 — Web Worker
-- [ ] M6 — Code generation, one-way (minimum complete project)
 - [ ] M7 — Two-way QASM sync
 - [ ] M8 — Teaching views (Density Matrices, Partial Trace Steps, status bar)
 - [ ] M9 — Polish & deploy (skeleton loaders, design review in both themes)
@@ -51,6 +51,12 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 | 2026-10-06 | Auto-placement = first column after the last gate touching the gate's span (ASAP layering) | "Earliest free column" alone could place a gate before an earlier one on the same wire |
 | 2026-10-06 | Theme toggle uses `codicon-color-mode` (deviation from "sun/moon") | Codicons has no sun/moon glyphs |
 | 2026-10-06 | ESLint (flat config) instead of the oxlint the Vite template now ships | User asked for ESLint |
+| 2026-10-06 | Sphere click only selects the qubit; a "Reduced ρ" button on each card selects + jumps to Density Matrices (deviation from "click jumps") | Keeps spheres visible during the demo |
+| 2026-10-06 | Bloch labels are DOM spans projected each frame, not drei `<Html>`/`<Text>` | `<Html>` caused React root unmount errors; `<Text>` fetches fonts from a CDN |
+| 2026-10-06 | Monaco used directly (`monaco.editor.create`), not via `@monaco-editor/react` | Its loader hard-codes a jsdelivr CDN URL into the bundle; direct use also gives model/marker control |
+| 2026-10-06 | `DndContext` wraps `<AppShell/>` in `App.tsx`; canvas selection lives in `Canvas/canvasStore.ts` | DnD must span palette + canvas; keep circuit store model-only |
+| 2026-10-06 | Worker: every change posted immediately, stale replies dropped by requestId; `computing` true only after 150 ms outstanding; sync main-thread fallback if Worker unavailable | Simple and flicker-free at n ≤ 6 |
+| 2026-10-06 | `ENTANGLEMENT_EPSILON` moved to `engine/types.ts` (re-exported from index) | Broke a circular import bloch.ts ↔ index.ts |
 | 2026-10-06 | Skeleton shimmer uses a subtle linear-gradient sweep | PLAN asks for a shimmer; it is a loading indicator, not a surface gradient; disabled under reduced motion |
 
 ## Open questions
@@ -63,7 +69,14 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - Offline: `@monaco-editor/react` loads Monaco from a CDN by default — must use `loader.config({ monaco })` with the local `monaco-editor` package. drei `<Text>` fetches a font from a CDN unless given a local `font` — avoid or pass a bundled font.
 - Prettier must not touch `CLAUDE.md`/`PLAN.md`/`CONTEXT.md` (listed in `.prettierignore`).
 - Local hook "GateGuard" asks for facts before the first write of each new file; just answer and retry.
+- GitHub push is blocked: Git Credential Manager can't prompt in this session ("could not read Username"). All work is committed locally; branches must be pushed once auth works.
+- three.js chunk ~950 kB and Monaco chunk ~3.2 MB (both lazy) trip Vite's 500 kB warning — expected.
+- Monaco bundles its own codicon font under the same family name as @vscode/codicons; new app icons should be checked after Monaco loads.
+- Dark-theme sphere wire token (#3a3a3a) is faint — revisit in M9.
+- Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
+- `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
 
 ## Session log
 - 2026-10-06 — Planning session: problem statement, UI design, architecture, plan, stretch goals.
 - 2026-10-06 — Build session: git/CI set up; M0 done and merged; contracts written for parallel waves.
+- 2026-10-06 — Waves 1–2: M1–M6 built by parallel subagents in worktrees, each merged via the gate; end-to-end check (Bell preset → both spheres at centre) passes.
