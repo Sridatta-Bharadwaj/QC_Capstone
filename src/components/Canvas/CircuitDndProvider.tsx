@@ -46,6 +46,8 @@ export function CircuitDndProvider({ children }: { children: ReactNode }) {
     <DndContext
       sensors={sensors}
       collisionDetection={pointerWithin}
+      // Only scroll the canvas when the pointer is really close to its edge.
+      autoScroll={{ threshold: { x: 0.08, y: 0.08 } }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setDragGate(null)}
