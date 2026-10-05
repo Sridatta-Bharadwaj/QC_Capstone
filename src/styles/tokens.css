@@ -21,23 +21,24 @@
 
   /* Borders */
   --color-border: #e0e0e0;
-  --color-border-strong: #c6c6c6;
-  --color-separator-hover: #0f766e;
+  --color-border-strong: #c6c6c6; /* decorative separators, table rules */
+  --color-border-input: #8a8a8a; /* form controls: >= 3:1 against panel and input (WCAG 1.4.11) */
+  --color-separator-hover: #0f756d;
 
-  /* Text (AA on all surfaces above) */
+  /* Text: WCAG AA (>= 4.5:1) on every surface above; checked by tests/design/contrast.test.ts */
   --color-text: #1f1f1f;
   --color-text-muted: #5c5c5c;
-  --color-text-subtle: #6b6b6b;
+  --color-text-subtle: #686868;
   --color-text-on-accent: #ffffff;
 
   /* Accent */
-  --color-accent: #0f766e;
-  --color-focus: #0f766e;
+  --color-accent: #0f756d;
+  --color-focus: #0f756d;
 
   /* Status */
   --color-error: #c4242b;
   --color-warning: #8a5a00;
-  --color-ok: #1a7f37;
+  --color-ok: #187734;
 
   /* Bloch axes (physics convention) */
   --axis-x: #d1242f;
@@ -98,17 +99,18 @@
   --color-bg-statusbar: #181818;
   --color-bg-input: #2a2a2a;
   --color-bg-hover: #2a2d2e;
-  --color-bg-selected: #1d3b38;
+  --color-bg-selected: #1a3633;
   --color-bg-skeleton: #2a2a2a;
   --color-bg-skeleton-shine: #333333;
 
   --color-border: #2b2b2b;
   --color-border-strong: #3c3c3c;
+  --color-border-input: #767676;
   --color-separator-hover: #4fb3a9;
 
   --color-text: #cccccc;
   --color-text-muted: #9d9d9d;
-  --color-text-subtle: #8f8f8f;
+  --color-text-subtle: #939393;
   --color-text-on-accent: #0b1f1d;
 
   --color-accent: #4fb3a9;

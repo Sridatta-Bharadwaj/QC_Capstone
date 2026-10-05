@@ -83,9 +83,11 @@ export function buildEditorTheme(
       'editorError.foreground': css('--color-error'),
       'editorWarning.foreground': css('--color-warning'),
       'input.background': css('--color-bg'),
-      'input.border': css('--color-border-strong'),
+      'input.border': css('--color-border-input'),
       focusBorder: css('--color-focus'),
       'scrollbar.shadow': bg,
+      // No drop shadows under Monaco's widgets (find, hover): flat, like the rest of the UI.
+      'widget.shadow': '#00000000',
       'scrollbarSlider.background': css('--color-bg-skeleton'),
       'scrollbarSlider.hoverBackground': css('--color-border-strong'),
       'scrollbarSlider.activeBackground': css('--color-border-strong'),
