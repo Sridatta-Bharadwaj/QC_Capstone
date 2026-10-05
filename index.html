@@ -125,9 +125,8 @@
       }
       .boot__bottom {
         display: flex;
-        flex-wrap: wrap;
-        align-content: flex-start;
-        gap: 8px;
+        flex-direction: column;
+        gap: 20px;
         flex: 1;
         padding: 12px;
         background: var(--b-panel);
@@ -219,8 +218,13 @@
               </div>
             </div>
             <div class="boot__bottom">
-              <i style="width: 100%; height: 10px; max-width: 360px"></i>
-              <i class="boot__card"></i><i class="boot__card"></i>
+              <div class="boot__row" style="gap: 24px">
+                <i style="width: 88px; height: 10px"></i><i style="width: 104px; height: 10px"></i
+                ><i style="width: 120px; height: 10px"></i><i style="width: 64px; height: 10px"></i>
+              </div>
+              <div class="boot__row" style="gap: 8px">
+                <i class="boot__card"></i><i class="boot__card"></i>
+              </div>
             </div>
           </div>
         </div>
