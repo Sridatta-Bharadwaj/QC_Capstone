@@ -11,13 +11,8 @@ import { useMemo, useState } from 'react'
 import { MatrixSkeleton } from '../Teaching/MatrixSkeleton'
 import { MatrixTable } from '../Teaching/MatrixTable'
 import { QubitSelector } from '../Teaching/QubitSelector'
-import {
-  MAX_DISPLAY_QUBITS,
-  blochFromRho,
-  cellKey,
-  formatReal,
-  subscript,
-} from '../Teaching/format'
+import { Rho } from '../Teaching/Rho'
+import { MAX_DISPLAY_QUBITS, blochFromRho, cellKey, formatReal } from '../Teaching/format'
 import { useTeachingData } from '../Teaching/useTeachingData'
 import '../Teaching/Teaching.css'
 
@@ -50,7 +45,6 @@ export function DensityMatricesPanel() {
   }
 
   const r = blochFromRho(qubit.rho)
-  const k = subscript(selected)
   const dim = 2 ** numQubits
 
   return (
@@ -59,9 +53,11 @@ export function DensityMatricesPanel() {
 
       <section className="teaching-section" aria-label={title}>
         <p>
-          <span className="math">ρ{k}</span> describes {name} on its own. Rows and columns are the
-          basis states <span className="math">|0⟩</span>, <span className="math">|1⟩</span> of{' '}
-          {name}.
+          <span className="math">
+            <Rho qubit={selected} />
+          </span>{' '}
+          describes {name} on its own. Rows and columns are the basis states{' '}
+          <span className="math">|0⟩</span>, <span className="math">|1⟩</span> of {name}.
         </p>
         <div className="teaching-row">
           <div className="matrix-scroll">
@@ -126,9 +122,12 @@ export function DensityMatricesPanel() {
         ) : (
           <>
             <p>
-              Hover an entry of <span className="math">ρ{k}</span> to outline the entries of ρ that
-              are added up to make it (see Partial Trace Steps). The bit of {name} is underlined in
-              the labels.
+              Hover an entry of{' '}
+              <span className="math">
+                <Rho qubit={selected} />
+              </span>{' '}
+              to outline the entries of ρ that are added up to make it (see Partial Trace Steps).
+              The bit of {name} is underlined in the labels.
             </p>
             <div className="matrix-scroll">
               <MatrixTable

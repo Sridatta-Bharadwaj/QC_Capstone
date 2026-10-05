@@ -11,6 +11,7 @@ import { BasisKet } from '../Teaching/BasisKet'
 import { MatrixSkeleton } from '../Teaching/MatrixSkeleton'
 import { MatrixTable } from '../Teaching/MatrixTable'
 import { QubitSelector } from '../Teaching/QubitSelector'
+import { Rho } from '../Teaching/Rho'
 import {
   MAX_DISPLAY_QUBITS,
   formatComplex,
@@ -52,7 +53,7 @@ function TraceEntryCard({
   return (
     <div className="trace-entry" data-testid={`trace-entry-${entry.a}${entry.b}`}>
       <div className="trace-entry__formula">
-        {label} = Σ ρ[{patternKet(numQubits, qubit, entry.a)}][
+        <Rho qubit={qubit} />[{entry.a}][{entry.b}] = Σ ρ[{patternKet(numQubits, qubit, entry.a)}][
         {patternKet(numQubits, qubit, entry.b)}]
       </div>
       {shown.length === 0 ? (
@@ -181,7 +182,6 @@ export function TraceStepsPanel() {
     )
   }
 
-  const k = subscript(selected)
   const dim = 2 ** numQubits
   const termsPerEntry = 2 ** (numQubits - 1)
   const diff = maxAbsDifference(explicit.reduced, qubit.rho)
@@ -198,7 +198,7 @@ export function TraceStepsPanel() {
             <h3>The state |ψ⟩</h3>
             <p>
               The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
-              listed. Kets read <span className="math">|q0 q1 …⟩</span>; the bit of {name} is
+              listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bit of {name} is
               underlined.
             </p>
             <Amplitudes state={analysis.state} numQubits={numQubits} qubit={selected} />
@@ -209,10 +209,13 @@ export function TraceStepsPanel() {
           <div className="step__body">
             <h3>Density matrix ρ = |ψ⟩⟨ψ|</h3>
             <p>
-              Each entry is <span className="math">ρ[i][j] = ψᵢ · conj(ψⱼ)</span>. For {numQubits}{' '}
-              qubit{numQubits === 1 ? '' : 's'} ρ is {dim}×{dim} = {dim * dim} entries. The diagonal
-              holds the probabilities; the off-diagonal entries hold the phases between basis
-              states.
+              Each entry is{' '}
+              <span className="math">
+                ρ[i][j] = ψ<sub>i</sub> · conj(ψ<sub>j</sub>)
+              </span>
+              . For {numQubits} qubit{numQubits === 1 ? '' : 's'} ρ is {dim}×{dim} = {dim * dim}{' '}
+              entries. The diagonal holds the probabilities; the off-diagonal entries hold the
+              phases between basis states.
             </p>
             {numQubits > MAX_DISPLAY_QUBITS ? (
               <p className="teaching-note" data-testid="too-large">
@@ -238,13 +241,19 @@ export function TraceStepsPanel() {
           <div className="step__body">
             <h3>Trace out every qubit except {name}</h3>
             {others === null ? (
-              <p>There are no other qubits, so ρ{k} is ρ itself.</p>
+              <p>
+                There are no other qubits, so <Rho qubit={selected} /> is ρ itself.
+              </p>
             ) : (
               <p>
-                For each entry <span className="math">ρ{k}[a][b]</span>, add up the entries of ρ
-                whose row has {name} = a, whose column has {name} = b, and where {others}{' '}
-                {numQubits === 2 ? 'has' : 'have'} the same value in row and column (shown as{' '}
-                <span className="math">·</span>). That is 2<sup>{numQubits - 1}</sup> ={' '}
+                For each entry{' '}
+                <span className="math">
+                  <Rho qubit={selected} />
+                  [a][b]
+                </span>
+                , add up the entries of ρ whose row has {name} = a, whose column has {name} = b, and
+                where {others} {numQubits === 2 ? 'has' : 'have'} the same value in row and column
+                (shown as <span className="math">·</span>). That is 2<sup>{numQubits - 1}</sup> ={' '}
                 {termsPerEntry} terms per entry. Terms that are 0 are hidden.
               </p>
             )}
@@ -263,7 +272,9 @@ export function TraceStepsPanel() {
 
         <li className="step">
           <div className="step__body">
-            <h3>Result: reduced density matrix ρ{k}</h3>
+            <h3>
+              Result: reduced density matrix <Rho qubit={selected} />
+            </h3>
             <div className="matrix-scroll">
               <MatrixTable
                 matrix={explicit.reduced}

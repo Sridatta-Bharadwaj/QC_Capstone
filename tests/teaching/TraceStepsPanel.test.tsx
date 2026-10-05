@@ -31,7 +31,7 @@ describe('TraceStepsPanel', () => {
 
     // Step 3: ρ₀[0][0] = ρ[00][00] + ρ[01][01] = 0.5 + 0 (only the non-zero term shown).
     const e00 = screen.getByTestId('trace-entry-00')
-    expect(e00).toHaveTextContent('ρ₀[0][0] = Σ ρ[|0·⟩][|0·⟩]')
+    expect(e00).toHaveTextContent('ρ0[0][0] = Σ ρ[|0·⟩][|0·⟩]')
     expect(bodyRows(e00)).toHaveLength(1)
     expect(within(e00).getByTestId('entry-sum')).toHaveTextContent('0.500')
 

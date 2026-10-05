@@ -130,6 +130,7 @@
 
 /* Matrices */
 .matrix-scroll {
+  align-self: flex-start;
   max-width: 100%;
   overflow-x: auto;
 }
@@ -286,6 +287,7 @@
 
 .amplitudes,
 .terms {
+  align-self: flex-start;
   border-collapse: collapse;
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
@@ -386,4 +388,10 @@
 .matrix-skeleton__grid {
   display: grid;
   gap: var(--sp-1);
+}
+
+.rho sub,
+.math sub {
+  font-size: 0.75em;
+  line-height: 0;
 }
