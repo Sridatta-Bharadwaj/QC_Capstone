@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-06 — M0–M6 merged; M7 + M8 in progress_
+_Last updated: 2026-10-06 — M0–M8 merged; M9 polish in progress_
 
 ## Current phase
 Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged into `main` via the gate (merge origin/main → typecheck+lint+test+build → `--no-ff` merge → re-check → push). See `PLAN.md`.
@@ -17,16 +17,16 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - [x] **M4 — Bloch spheres** (2026-10-06, `m4-bloch`): `src/components/Bloch/*` (lazy three.js chunk, DOM labels), `BottomPanel/BlochPanel.tsx`, tests `tests/bloch/`
 - [x] **M5 — Web Worker** (2026-10-06, `m5-worker`): `src/worker/{engine.worker,handleRequest,engineClient,useEngineBridge}.ts`, mounted in `App.tsx`, tests `tests/worker/`
 - [x] **M6 — Code generation** (2026-10-06, `m6-codegen`): `src/codegen/{qasm,qiskit,index}.ts`, `src/components/CodePanel/*` (direct Monaco wrapper, lazy, offline), tests `tests/codegen/`
+- [x] **M7 — Two-way QASM sync** (2026-10-06, `m7-sync`): `src/parser/qasm.ts`, `src/components/CodePanel/{qasmSync,revealStore}.ts`, editable QASM tab + markers, `BottomPanel/ProblemsPanel.tsx`, tests `tests/parser/`, `tests/sync/`
+- [x] **M8 — Teaching views** (2026-10-06, `m8-teaching-views`): `src/components/Teaching/*`, `BottomPanel/{DensityMatricesPanel,TraceStepsPanel}.tsx` (lazy), `StatusBar/*`, tests `tests/teaching/`
 
 ## In progress
-- M7 two-way QASM sync and M8 teaching views (parallel subagents)
+- M9 polish (skeletons, empty states, design review both themes, contrast, README, offline build)
 
 ## Next up
-- M9 polish (after M7 + M8) → independent review → fix-review
+- Independent review of `main` → fixes on `fix-review` → M10 (presentation, separate)
 
 ## Left (backlog, in order)
-- [ ] M7 — Two-way QASM sync
-- [ ] M8 — Teaching views (Density Matrices, Partial Trace Steps, status bar)
 - [ ] M9 — Polish & deploy (skeleton loaders, design review in both themes)
 - [ ] M10 — Presentation + live demo prep (slides, scripted demo, offline backup)
 - Then: review v1 → plan stretch goals → revisit UI
@@ -57,6 +57,10 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 | 2026-10-06 | `DndContext` wraps `<AppShell/>` in `App.tsx`; canvas selection lives in `Canvas/canvasStore.ts` | DnD must span palette + canvas; keep circuit store model-only |
 | 2026-10-06 | Worker: every change posted immediately, stale replies dropped by requestId; `computing` true only after 150 ms outstanding; sync main-thread fallback if Worker unavailable | Simple and flicker-free at n ≤ 6 |
 | 2026-10-06 | `ENTANGLEMENT_EPSILON` moved to `engine/types.ts` (re-exported from index) | Broke a circular import bloch.ts ↔ index.ts |
+| 2026-10-06 | QASM round-trip: exact for parser-placed layouts; canvas layouts with gaps normalise in one pass (statevector + dependent-gate order preserved) | `toQasm` orders by column; parser re-packs ASAP. Accepted (PLAN: formatting normalised) |
+| 2026-10-06 | Unsupported QASM (measure, reset, if, gate defs) = error; barrier/creg = warning and ignored | Measurement is out of scope for v1 |
+| 2026-10-06 | Full ρ shown only for n ≤ 4 (`MAX_DISPLAY_QUBITS`); larger shows "too large to display" | 32×32/64×64 unreadable |
+| 2026-10-06 | Subscripts in mono text use `<sub>` (Rho component), not Unicode ₀₁ | IBM Plex Mono lacks subscript glyphs |
 | 2026-10-06 | Skeleton shimmer uses a subtle linear-gradient sweep | PLAN asks for a shimmer; it is a loading indicator, not a surface gradient; disabled under reduced motion |
 
 ## Open questions
@@ -80,3 +84,4 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - 2026-10-06 — Planning session: problem statement, UI design, architecture, plan, stretch goals.
 - 2026-10-06 — Build session: git/CI set up; M0 done and merged; contracts written for parallel waves.
 - 2026-10-06 — Waves 1–2: M1–M6 built by parallel subagents in worktrees, each merged via the gate; end-to-end check (Bell preset → both spheres at centre) passes.
+- 2026-10-06 — Wave 3: M7 sync + M8 teaching views merged via gate (542 tests).
