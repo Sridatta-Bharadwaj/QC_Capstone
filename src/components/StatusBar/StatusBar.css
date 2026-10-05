@@ -22,3 +22,24 @@
 .status-bar__item .codicon {
   font-size: 14px;
 }
+
+.status-bar__label {
+  margin-right: var(--sp-1);
+}
+
+.status-bar__mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+.status-bar__sep {
+  color: var(--color-text-subtle);
+}
+
+.status-bar__error {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-error);
+}
