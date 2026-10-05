@@ -23,7 +23,7 @@ describe('qasmStatement', () => {
     [op('T', 0, [0]), 't q[0];'],
     [op('Tdg', 0, [0]), 'tdg q[0];'],
     [op('RX', 0, [1], Math.PI / 2), 'rx(pi/2) q[1];'],
-    [op('RY', 0, [0], -3 * Math.PI / 4), 'ry(-3*pi/4) q[0];'],
+    [op('RY', 0, [0], (-3 * Math.PI) / 4), 'ry(-3*pi/4) q[0];'],
     [op('RZ', 0, [0], 0.25), 'rz(0.25) q[0];'],
     [op('CX', 0, [0, 1]), 'cx q[0],q[1];'],
     [op('CX', 0, [2, 0]), 'cx q[2],q[0];'],
@@ -63,9 +63,7 @@ describe('toQasm', () => {
       numQubits: 2,
       operations: [op('RX', 2, [1], Math.PI / 2), op('CX', 1, [0, 1]), op('H', 0, [0])],
     }
-    expect(toQasm(circuit)).toBe(
-      HEADER + 'qreg q[2];\n\nh q[0];\ncx q[0],q[1];\nrx(pi/2) q[1];\n',
-    )
+    expect(toQasm(circuit)).toBe(HEADER + 'qreg q[2];\n\nh q[0];\ncx q[0],q[1];\nrx(pi/2) q[1];\n')
   })
 
   it('orders by column, then by lowest qubit within a column', () => {

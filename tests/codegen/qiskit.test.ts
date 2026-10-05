@@ -32,7 +32,7 @@ describe('qiskitStatement', () => {
     [op('T', 0, [0]), 'qc.t(0)'],
     [op('Tdg', 0, [0]), 'qc.tdg(0)'],
     [op('RX', 0, [1], Math.PI / 2), 'qc.rx(pi/2, 1)'],
-    [op('RY', 0, [0], -3 * Math.PI / 4), 'qc.ry(-3*pi/4, 0)'],
+    [op('RY', 0, [0], (-3 * Math.PI) / 4), 'qc.ry(-3*pi/4, 0)'],
     [op('RZ', 0, [2], 0.25), 'qc.rz(0.25, 2)'],
     [op('CX', 0, [0, 1]), 'qc.cx(0, 1)'],
     [op('CX', 0, [2, 0]), 'qc.cx(2, 0)'],
