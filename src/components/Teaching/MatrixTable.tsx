@@ -6,6 +6,9 @@ import type { ComplexMatrix } from '../../engine/types'
 import { BasisKet } from './BasisKet'
 import { cellKey, formatComplex, isZero, magnitude } from './format'
 
+/** From this size on (16×16 = 4 qubits) cells get a smaller font and padding to fit the panel. */
+const DENSE_SIZE = 16
+
 interface MatrixTableProps {
   matrix: ComplexMatrix
   /** Qubits the row/column index runs over (1 for a reduced 2×2 ρ). */
@@ -39,7 +42,13 @@ export function MatrixTable({
 
   return (
     <table
-      className={`matrix${compact ? ' matrix--compact' : ''}`}
+      className={[
+        'matrix',
+        compact ? 'matrix--compact' : '',
+        size >= DENSE_SIZE ? 'matrix--dense' : '',
+      ]
+        .join(' ')
+        .trim()}
       aria-label={label}
       data-testid={testId}
     >

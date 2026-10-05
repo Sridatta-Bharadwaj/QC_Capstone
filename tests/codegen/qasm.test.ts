@@ -114,6 +114,7 @@ describe('toQasm presets', () => {
       'ry(1.91063323625) q[0];\nry(pi/4) q[1];\ncx q[0],q[1];\nry(-pi/4) q[1];\n' +
       'cx q[0],q[1];\ncx q[1],q[2];\ncx q[0],q[1];\nx q[0];\n',
     product: 'qreg q[3];\n\nh q[0];\nx q[1];\nh q[2];\ns q[2];\n',
+    partial: 'qreg q[2];\n\nry(pi/3) q[0];\ncx q[0],q[1];\n',
   }
 
   it('has an expectation for every preset', () => {

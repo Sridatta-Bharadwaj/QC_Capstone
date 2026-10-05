@@ -204,6 +204,16 @@
   padding: 1px var(--sp-1);
 }
 
+/* 16×16 (n = 4): smaller type and tighter cells so the whole matrix fits a laptop panel. */
+.matrix--dense {
+  font-size: 10px;
+}
+
+.matrix--dense th,
+.matrix--dense .matrix__cell {
+  padding: 0 3px;
+}
+
 /* Key–value list of derived quantities next to the reduced ρ. */
 .quantities {
   display: grid;
