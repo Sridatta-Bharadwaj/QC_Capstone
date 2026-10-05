@@ -1,16 +1,71 @@
-// Status bar: qubit count, entangled qubits, purity per qubit. (M8 completes.)
-import { useCircuitStore } from '../../model/store'
+// Status bar: qubit count, entangled qubits, purity per qubit, engine state.
+// Purity Tr(ρₖ²) is 1 for a pure qubit and 0.5 for a maximally mixed one.
+import { useCircuitStore, useResultsStore } from '../../model/store'
 import { MAX_QUBITS } from '../../model/types'
+import { formatReal, qubitList } from '../Teaching/format'
 import './StatusBar.css'
 
 export function StatusBar() {
   const numQubits = useCircuitStore((s) => s.circuit.numQubits)
+  const analysis = useResultsStore((s) => s.analysis)
+  const computing = useResultsStore((s) => s.computing)
+  const error = useResultsStore((s) => s.error)
+
+  const qubits = analysis?.qubits ?? []
+  const entangled = qubitList(qubits.filter((q) => q.entangled).map((q) => q.qubit))
+
   return (
     <footer className="status-bar">
-      <span className="status-bar__item">
+      <span className="status-bar__item" data-testid="status-qubits">
         <span className="codicon codicon-circuit-board" aria-hidden="true" />
         {numQubits} / {MAX_QUBITS} qubits
       </span>
+
+      {analysis && (
+        <span
+          className="status-bar__item"
+          data-testid="status-entangled"
+          title="Qubits whose Bloch vector is shorter than 1 (mixed, entangled with the rest)"
+        >
+          <span className="codicon codicon-link" aria-hidden="true" />
+          {entangled === null ? 'No entanglement' : `Entangled: ${entangled}`}
+        </span>
+      )}
+
+      {analysis && (
+        <span
+          className="status-bar__item status-bar__purity"
+          data-testid="status-purity"
+          title="Purity Tr(ρ²) per qubit: 1 = pure, 0.5 = maximally mixed"
+        >
+          <span className="status-bar__label">Purity</span>{' '}
+          {qubits.map((q, i) => (
+            <span key={q.qubit} className="status-bar__mono">
+              {i > 0 && <span className="status-bar__sep"> · </span>}q{q.qubit}{' '}
+              {formatReal(q.purity)}
+            </span>
+          ))}
+        </span>
+      )}
+
+      {computing && (
+        <span className="status-bar__item" data-testid="status-computing" role="status">
+          <span className="codicon codicon-sync" aria-hidden="true" />
+          Computing…
+        </span>
+      )}
+
+      {error && (
+        <span
+          className="status-bar__item status-bar__error"
+          data-testid="status-error"
+          role="alert"
+          title={error}
+        >
+          <span className="codicon codicon-error" aria-hidden="true" />
+          Engine error: {error}
+        </span>
+      )}
     </footer>
   )
 }
