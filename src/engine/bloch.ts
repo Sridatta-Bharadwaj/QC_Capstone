@@ -21,7 +21,7 @@
 // with the other qubits: some of its information lives in correlations with
 // them, which a view of qubit k alone cannot see. So |r| < 1 ⇔ entangled.
 import type { Circuit } from '../model/types'
-import { ENTANGLEMENT_EPSILON } from './index'
+import { ENTANGLEMENT_EPSILON } from './types'
 import { abs2 } from './complex'
 import { reducedDensityMatrix } from './partialTrace'
 import { simulate } from './simulator'

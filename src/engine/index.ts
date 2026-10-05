@@ -15,7 +15,7 @@ export type {
 } from './types'
 
 /** A qubit counts as entangled (mixed) when |r| < 1 − ENTANGLEMENT_EPSILON. */
-export const ENTANGLEMENT_EPSILON = 1e-9
+export { ENTANGLEMENT_EPSILON } from './types'
 
 /**
  * simulate(circuit) → statevector.

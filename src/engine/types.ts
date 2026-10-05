@@ -1,5 +1,8 @@
 // Engine data types. CONTRACT FILE: change only on `main`.
 
+/** A qubit counts as entangled (mixed) when |r| < 1 − ENTANGLEMENT_EPSILON. */
+export const ENTANGLEMENT_EPSILON = 1e-9
+
 /** A complex number a + bi. Plain object so it survives postMessage to/from the worker. */
 export interface Complex {
   re: number
