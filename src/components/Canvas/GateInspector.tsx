@@ -79,10 +79,18 @@ function AngleField({ angle, onCommit }: AngleFieldProps) {
   if (draft.forAngle !== angle)
     setDraft({ forAngle: angle, text: formatAngle(angle), error: false })
 
-  function commit() {
+  const revert = () => setDraft({ forAngle: angle, text: formatAngle(angle), error: false })
+
+  /**
+   * Enter: apply a valid angle; invalid text stays in the field with an inline error so it can
+   * be corrected. Blur: the same, except invalid text is dropped and the field shows the angle
+   * the model actually has again (it never displays a value that is not in the circuit).
+   */
+  function commit(onInvalid: 'keep' | 'revert') {
     const value = parseAngle(draft.text)
     if (value === null) {
-      setDraft({ ...draft, error: true })
+      if (onInvalid === 'revert') revert()
+      else setDraft({ ...draft, error: true })
       return
     }
     if (value === angle) setDraft({ forAngle: angle, text: formatAngle(angle), error: false })
@@ -100,11 +108,10 @@ function AngleField({ angle, onCommit }: AngleFieldProps) {
         aria-invalid={draft.error}
         aria-describedby={draft.error ? errorId : undefined}
         onChange={(e) => setDraft({ ...draft, text: e.target.value, error: false })}
-        onBlur={commit}
+        onBlur={() => commit('revert')}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') commit()
-          if (e.key === 'Escape')
-            setDraft({ forAngle: angle, text: formatAngle(angle), error: false })
+          if (e.key === 'Enter') commit('keep')
+          if (e.key === 'Escape') revert()
         }}
       />
       {draft.error && (

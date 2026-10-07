@@ -106,14 +106,40 @@ describe('CanvasView gates and inspector', () => {
     expect(input).toHaveValue('-3*pi/4')
   })
 
-  it('rejects an invalid angle with an inline error and keeps the old one', () => {
+  it('rejects an invalid angle on Enter with an inline error and keeps the old one', () => {
     renderCanvas(rx, 'rx')
     const input = screen.getByRole('textbox', { name: 'Rotation angle' })
     fireEvent.change(input, { target: { value: 'pi/' } })
-    fireEvent.blur(input)
+    fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('alert')).toHaveTextContent('Invalid angle')
     expect(input).toHaveAttribute('aria-invalid', 'true')
+    expect(input).toHaveValue('pi/')
     expect(ops()[0].angle).toBe(Math.PI / 2)
+  })
+
+  it.each(['abc', ''])('reverts invalid text %j to the current angle on blur', (text) => {
+    renderCanvas(rx, 'rx')
+    const input = screen.getByRole('textbox', { name: 'Rotation angle' })
+    fireEvent.change(input, { target: { value: text } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    fireEvent.blur(input)
+    expect(input).toHaveValue('pi/2')
+    expect(input).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(ops()[0].angle).toBe(Math.PI / 2)
+  })
+
+  it('commits a valid angle on blur and reverts with Escape', () => {
+    renderCanvas(rx, 'rx')
+    const input = screen.getByRole('textbox', { name: 'Rotation angle' })
+    fireEvent.change(input, { target: { value: 'pi' } })
+    fireEvent.blur(input)
+    expect(ops()[0].angle).toBeCloseTo(Math.PI)
+    fireEvent.change(input, { target: { value: 'nonsense' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(input).toHaveValue('pi')
+    expect(ops()[0].angle).toBeCloseTo(Math.PI)
   })
 
   it('re-targets qubits, swapping roles when needed', () => {
