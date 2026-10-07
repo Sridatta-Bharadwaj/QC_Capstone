@@ -2,6 +2,7 @@
 // Shown only while something really loads: the lazy tab chunk, or worker results that are
 // not available yet / have been outstanding > 150 ms (that delay lives in the worker bridge).
 import { Skeleton, SkeletonGroup } from '../common/Skeleton'
+import './MatrixSkeleton.css'
 
 export function MatrixSkeleton({ label, size = 4 }: { label: string; size?: number }) {
   return (

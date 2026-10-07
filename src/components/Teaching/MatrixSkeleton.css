@@ -1,0 +1,19 @@
+/* Skeleton: grid of grey cells. Its own file, imported by MatrixSkeleton, because the
+ * skeleton is the fallback *while* the lazy teaching chunk (and Teaching.css with it) loads.
+ * Side padding matches the real tab content (.teaching). */
+.matrix-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+}
+
+.matrix-skeleton__grid {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+/* Inside a loaded teaching tab, .teaching already provides the side padding. */
+.teaching .matrix-skeleton {
+  padding: 0;
+}

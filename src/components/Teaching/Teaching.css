@@ -392,19 +392,6 @@
   color: var(--color-error);
 }
 
-/* Skeleton: grid of grey cells */
-.matrix-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-}
-
-.matrix-skeleton__grid {
-  display: grid;
-  gap: var(--sp-1);
-}
-
 .rho sub,
 .math sub {
   font-size: 0.75em;

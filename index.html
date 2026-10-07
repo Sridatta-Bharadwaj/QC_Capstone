@@ -83,16 +83,62 @@
         flex: 1;
         min-height: 0;
       }
+      /* Sidebar: mirrors components/Sidebar (header, three gate groups that wrap like the
+         real palette, presets header, preset list) so nothing jumps when React mounts. */
       .boot__sidebar {
         display: flex;
         flex-direction: column;
-        gap: 8px;
         width: 16%;
         min-width: 160px;
-        padding: 12px;
         background: var(--b-sidebar);
         border-right: 1px solid var(--b-border);
         box-sizing: border-box;
+        /* Same overflow as the real sidebar: on short screens its scrollbar narrows the
+           palette, which changes how the gate boxes wrap. */
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+      .boot__header {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+        height: 32px;
+        padding: 0 12px;
+      }
+      .boot__palette + .boot__header {
+        border-top: 1px solid var(--b-border);
+      }
+      .boot__palette {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 12px 12px;
+      }
+      .boot__group-title {
+        display: flex;
+        align-items: center;
+        height: 15px;
+        margin-bottom: 4px;
+      }
+      .boot__gates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      /* One bar per text line: name 17px, then description lines of 15.5px (11px text). */
+      .boot__preset {
+        display: flex;
+        flex-direction: column;
+        padding: 4px 12px;
+      }
+      .boot .boot__preset i {
+        flex-shrink: 0;
+        height: 8px;
+        margin: 4px 0 3.5px;
+      }
+      .boot .boot__preset i:first-child {
+        height: 10px;
+        margin: 4px 0 5px;
       }
       .boot__main {
         display: flex;
@@ -159,8 +205,8 @@
         margin: 20px 0;
       }
       .boot .boot__card {
-        width: 184px;
-        height: 220px;
+        width: 168px;
+        height: 216px;
         border-radius: 4px;
       }
       @keyframes boot-shimmer {
@@ -189,19 +235,54 @@
         <div class="boot__bar boot__title"><i style="width: 160px"></i></div>
         <div class="boot__body">
           <div class="boot__sidebar">
-            <i style="width: 48px; height: 10px"></i>
-            <div class="boot__row">
-              <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
-              ><i class="boot__gate"></i><i class="boot__gate"></i>
+            <div class="boot__header"><i style="width: 40px; height: 10px"></i></div>
+            <div class="boot__palette">
+              <div>
+                <div class="boot__group-title"><i style="width: 64px; height: 9px"></i></div>
+                <div class="boot__gates">
+                  <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
+                  ><i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
+                  ><i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i>
+                </div>
+              </div>
+              <div>
+                <div class="boot__group-title"><i style="width: 52px; height: 9px"></i></div>
+                <div class="boot__gates">
+                  <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i>
+                </div>
+              </div>
+              <div>
+                <div class="boot__group-title"><i style="width: 60px; height: 9px"></i></div>
+                <div class="boot__gates">
+                  <i class="boot__gate"></i><i class="boot__gate"></i
+                  ><i class="boot__gate" style="width: 36px"></i><i class="boot__gate"></i>
+                </div>
+              </div>
             </div>
-            <div class="boot__row">
-              <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
-              ><i class="boot__gate"></i>
+            <div class="boot__header"><i style="width: 52px; height: 10px"></i></div>
+            <div class="boot__preset">
+              <i style="width: 60%"></i><i style="width: 90%"></i><i style="width: 50%"></i>
             </div>
-            <i style="width: 56px; height: 10px; margin-top: 16px"></i>
-            <i style="width: 80%"></i>
-            <i style="width: 90%"></i>
-            <i style="width: 70%"></i>
+            <div class="boot__preset">
+              <i style="width: 70%"></i><i style="width: 90%"></i><i style="width: 85%"></i
+              ><i style="width: 40%"></i>
+            </div>
+            <div class="boot__preset">
+              <i style="width: 65%"></i><i style="width: 90%"></i><i style="width: 85%"></i
+              ><i style="width: 80%"></i><i style="width: 60%"></i>
+            </div>
+            <div class="boot__preset">
+              <i style="width: 45%"></i><i style="width: 90%"></i><i style="width: 80%"></i
+              ><i style="width: 55%"></i>
+            </div>
+            <div class="boot__preset">
+              <i style="width: 50%"></i><i style="width: 90%"></i><i style="width: 80%"></i
+              ><i style="width: 45%"></i>
+            </div>
+            <div class="boot__preset">
+              <i style="width: 55%"></i><i style="width: 90%"></i><i style="width: 85%"></i
+              ><i style="width: 50%"></i>
+            </div>
           </div>
           <div class="boot__main">
             <div class="boot__top">
