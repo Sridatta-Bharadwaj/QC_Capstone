@@ -5,6 +5,7 @@ import { useEffect, type KeyboardEvent } from 'react'
 import { columnCount } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
 import { MAX_QUBITS } from '../../model/types'
+import { MathText } from '../common/MathText'
 import { deleteSelected, nudgeSelected } from './actions'
 import { useCanvasStore } from './canvasStore'
 import { CircuitGrid } from './CircuitGrid'
@@ -132,8 +133,8 @@ export function CanvasView() {
         />
         {circuit.operations.length === 0 && (
           <p className="canvas__empty" data-testid="canvas-empty">
-            No gates yet: every qubit is in |0⟩. Drag a gate from the palette onto a wire, click a
-            gate in the palette to append it, or pick a preset.
+            <MathText text="No gates yet: every qubit is in |0⟩." /> Drag a gate from the palette
+            onto a wire, click a gate in the palette to append it, or pick a preset.
           </p>
         )}
       </div>

@@ -6,6 +6,7 @@ import { paletteId, type DragData } from '../Canvas/dnd'
 import { PRESETS } from '../../model/presets'
 import { useCircuitStore } from '../../model/store'
 import { GATES, type GateType } from '../../model/types'
+import { MathText } from '../common/MathText'
 import './Sidebar.css'
 
 const GROUPS: { title: string; gates: GateType[] }[] = [
@@ -73,8 +74,12 @@ function Presets() {
               selectOp(null)
             }}
           >
-            <span className="presets__name">{preset.name}</span>
-            <span className="presets__description">{preset.description}</span>
+            <span className="presets__name">
+              <MathText text={preset.name} />
+            </span>
+            <span className="presets__description">
+              <MathText text={preset.description} />
+            </span>
           </button>
         </li>
       ))}

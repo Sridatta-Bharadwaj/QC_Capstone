@@ -1,0 +1,16 @@
+/* Dirac notation inside running text (see MathText.tsx). */
+.math-text__ket {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Fallback-font ⟨ ⟩ have almost no side bearing: give them some room. */
+.math-text__bracket {
+  margin: 0 0.06em;
+}
+
+.math-text__sup {
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: 0.45em;
+}
