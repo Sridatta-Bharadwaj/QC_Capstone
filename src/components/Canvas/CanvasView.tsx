@@ -47,6 +47,8 @@ export function CanvasView() {
 
   const selectedOp = circuit.operations.find((o) => o.id === selectedOpId) ?? null
   const n = circuit.numQubits
+  const atMax = n >= MAX_QUBITS
+  const atMin = n <= 1
 
   useEffect(() => {
     if (!hint) return
@@ -85,9 +87,9 @@ export function CanvasView() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Add qubit"
-          title="Add qubit"
-          disabled={n >= MAX_QUBITS}
+          aria-label={atMax ? `Add qubit (maximum of ${MAX_QUBITS} qubits reached)` : 'Add qubit'}
+          title={atMax ? `Maximum of ${MAX_QUBITS} qubits reached` : 'Add qubit'}
+          disabled={atMax}
           onClick={addQubit}
         >
           <span className="codicon codicon-add" aria-hidden="true" />
@@ -95,9 +97,9 @@ export function CanvasView() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Remove qubit"
-          title="Remove bottom qubit (and its gates)"
-          disabled={n <= 1}
+          aria-label={atMin ? 'Remove qubit (at least one qubit is needed)' : 'Remove qubit'}
+          title={atMin ? 'At least one qubit is needed' : 'Remove bottom qubit (and its gates)'}
+          disabled={atMin}
           onClick={removeQubit}
         >
           <span className="codicon codicon-remove" aria-hidden="true" />

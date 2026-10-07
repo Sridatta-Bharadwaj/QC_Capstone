@@ -37,6 +37,8 @@ describe('CanvasView toolbar', () => {
     for (let i = 2; i < MAX_QUBITS; i++) fireEvent.click(add)
     expect(useCircuitStore.getState().circuit.numQubits).toBe(MAX_QUBITS)
     expect(add).toBeDisabled()
+    expect(add).toHaveAccessibleName(`Add qubit (maximum of ${MAX_QUBITS} qubits reached)`)
+    expect(add).toHaveAttribute('title', `Maximum of ${MAX_QUBITS} qubits reached`)
     expect(screen.getAllByRole('button', { name: /^Select qubit/ })).toHaveLength(MAX_QUBITS)
   })
 
@@ -47,6 +49,7 @@ describe('CanvasView toolbar', () => {
     fireEvent.click(remove)
     expect(useCircuitStore.getState().circuit.numQubits).toBe(1)
     expect(remove).toBeDisabled()
+    expect(remove).toHaveAttribute('title', 'At least one qubit is needed')
   })
 
   it('shows an empty-circuit hint only while there are no gates', () => {

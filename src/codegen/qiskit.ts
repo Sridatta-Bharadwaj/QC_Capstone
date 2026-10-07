@@ -37,16 +37,18 @@ export function qiskitStatement(op: Operation): string {
 /** The whole circuit as a Python script (ends with a newline). */
 export function toQiskit(circuit: Circuit): string {
   const single = circuit.numQubits === 1
+  const statements = sortedOperations(circuit).map(qiskitStatement)
+  // Import pi only when an angle is written with it (e.g. "pi/2"): no unused import.
+  const usesPi = statements.some((s) => /\bpi\b/.test(s))
   const lines = [
-    'from math import pi',
-    '',
+    ...(usesPi ? ['from math import pi', ''] : []),
     'from qiskit import QuantumCircuit',
     single
       ? 'from qiskit.quantum_info import DensityMatrix, Statevector'
       : 'from qiskit.quantum_info import Statevector, partial_trace',
     '',
     `qc = QuantumCircuit(${circuit.numQubits})`,
-    ...sortedOperations(circuit).map(qiskitStatement),
+    ...statements,
     '',
   ]
 
