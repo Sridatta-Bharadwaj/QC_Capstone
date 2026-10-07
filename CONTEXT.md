@@ -1,9 +1,9 @@
 # Project Context Register
 
-_Last updated: 2026-10-06 — M0–M8 merged; M9 polish in progress_
+_Last updated: 2026-10-07 — v1 (M0–M9) complete, reviewed, fixes merged; next: M10 presentation_
 
 ## Current phase
-Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged into `main` via the gate (merge origin/main → typecheck+lint+test+build → `--no-ff` merge → re-check → push). See `PLAN.md`.
+v1 is complete on `main` (M0–M9 + independent review fixes). All milestone branches are on GitHub. Next: M10 presentation/demo prep (handled separately), deployment (deferred by user), then stretch goals + UI revisit.
 
 ## Done
 - [x] Problem statement received (2026-10-06)
@@ -19,15 +19,18 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - [x] **M6 — Code generation** (2026-10-06, `m6-codegen`): `src/codegen/{qasm,qiskit,index}.ts`, `src/components/CodePanel/*` (direct Monaco wrapper, lazy, offline), tests `tests/codegen/`
 - [x] **M7 — Two-way QASM sync** (2026-10-06, `m7-sync`): `src/parser/qasm.ts`, `src/components/CodePanel/{qasmSync,revealStore}.ts`, editable QASM tab + markers, `BottomPanel/ProblemsPanel.tsx`, tests `tests/parser/`, `tests/sync/`
 - [x] **M8 — Teaching views** (2026-10-06, `m8-teaching-views`): `src/components/Teaching/*`, `BottomPanel/{DensityMatricesPanel,TraceStepsPanel}.tsx` (lazy), `StatusBar/*`, tests `tests/teaching/`
+- [x] **M9 — Polish** (2026-10-07, `m9-polish`): boot skeleton in `index.html`, Bloch compute/mismatch skeletons, empty states, presets reordered + partially entangled pair, WCAG contrast + design-rule tests `tests/design/`, removed `@monaco-editor/react`, `chunkSizeWarningLimit`, format:check in CI, `README.md` + `docs/screenshots/`. Offline verified: production preview makes only same-origin requests. Deployment NOT done (deferred by user)
+- [x] **Independent review + fixes** (2026-10-07, `fix-review`): no blockers. Fixed: Bloch cards sized from panel (`Bloch/layout.ts`, `useElementSize.ts`) so 6 spheres fit at 1280×720; notice when a canvas edit replaces QASM with errors (`CodePanel/ReplacedNotice.tsx`); status-bar "QASM has errors — showing last valid circuit"; inspector reverts invalid angle on blur; selected gate scrolls into view; `common/MathText.tsx` for ⟨ ⟩ and ⁺ glyphs; even matrix columns; boot/teaching skeletons match layout; disabled-button tooltips; Qiskit imports `pi` only when used. 785 tests
 
 ## In progress
-- M9 polish (skeletons, empty states, design review both themes, contrast, README, offline build)
+- (nothing)
 
 ## Next up
-- Independent review of `main` → fixes on `fix-review` → M10 (presentation, separate)
+- M10 — presentation + scripted demo + offline backup (separate)
+- Deployment (GitHub Pages; `base: './'` already set) when the user asks
+- Rehearse the demo at the projector resolution
 
 ## Left (backlog, in order)
-- [ ] M9 — Polish & deploy (skeleton loaders, design review in both themes)
 - [ ] M10 — Presentation + live demo prep (slides, scripted demo, offline backup)
 - Then: review v1 → plan stretch goals → revisit UI
 - Stretch goals: see `PLAN.md` → Stretch goals
@@ -61,6 +64,11 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 | 2026-10-06 | Unsupported QASM (measure, reset, if, gate defs) = error; barrier/creg = warning and ignored | Measurement is out of scope for v1 |
 | 2026-10-06 | Full ρ shown only for n ≤ 4 (`MAX_DISPLAY_QUBITS`); larger shows "too large to display" | 32×32/64×64 unreadable |
 | 2026-10-06 | Subscripts in mono text use `<sub>` (Rho component), not Unicode ₀₁ | IBM Plex Mono lacks subscript glyphs |
+| 2026-10-07 | Deployment deferred (not part of this build) | User instruction |
+| 2026-10-07 | Bloch card size follows the panel size (96–200 px sphere); mixed note is a header tag | Spheres must be fully visible on a 1280×720 projector |
+| 2026-10-07 | Dirac notation rendered via `MathText` (mono kets/bras, `<sup>` for ⁺/⁻) | IBM Plex fonts lack ⟨ ⟩ and ⁺ glyphs |
+| 2026-10-07 | Canvas edit over erroneous QASM still regenerates (PLAN rule) but shows a notice with Ctrl+Z hint; status bar flags stale results while QASM has errors | Avoid silent loss during live typing in the demo |
+| 2026-10-07 | Not done on purpose: circuit persistence across reload, confirm dialog on Remove qubit | Not in spec |
 | 2026-10-06 | Skeleton shimmer uses a subtle linear-gradient sweep | PLAN asks for a shimmer; it is a loading indicator, not a surface gradient; disabled under reduced motion |
 
 ## Open questions
@@ -73,10 +81,9 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - Offline: `@monaco-editor/react` loads Monaco from a CDN by default — must use `loader.config({ monaco })` with the local `monaco-editor` package. drei `<Text>` fetches a font from a CDN unless given a local `font` — avoid or pass a bundled font.
 - Prettier must not touch `CLAUDE.md`/`PLAN.md`/`CONTEXT.md` (listed in `.prettierignore`).
 - Local hook "GateGuard" asks for facts before the first write of each new file; just answer and retry.
-- GitHub push is blocked: Git Credential Manager can't prompt in this session ("could not read Username"). All work is committed locally; branches must be pushed once auth works.
+- GitHub pushes: Git Credential Manager may need an interactive sign-in; when pushes hang, authenticate from your own terminal first. Use `GIT_TERMINAL_PROMPT=0 timeout …` in automation so it fails instead of hanging.
 - three.js chunk ~950 kB and Monaco chunk ~3.2 MB (both lazy) trip Vite's 500 kB warning — expected.
 - Monaco bundles its own codicon font under the same family name as @vscode/codicons; new app icons should be checked after Monaco loads.
-- Dark-theme sphere wire token (#3a3a3a) is faint — revisit in M9.
 - Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
 - `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
 
@@ -85,3 +92,4 @@ Building v1 (M0–M9) with parallel subagents, one branch per milestone, merged 
 - 2026-10-06 — Build session: git/CI set up; M0 done and merged; contracts written for parallel waves.
 - 2026-10-06 — Waves 1–2: M1–M6 built by parallel subagents in worktrees, each merged via the gate; end-to-end check (Bell preset → both spheres at centre) passes.
 - 2026-10-06 — Wave 3: M7 sync + M8 teaching views merged via gate (542 tests).
+- 2026-10-07 — M9 finished by lead after the M9 agent hit a usage limit; all branches pushed; independent review (no blockers) → `fix-review` merged (785 tests). Known limit: at 1024×768 with 6 qubits the sphere grid wraps and scrolls.
