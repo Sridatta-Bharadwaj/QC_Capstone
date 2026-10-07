@@ -1,7 +1,7 @@
 // The circuit diagram: wire labels, wires, droppable cells and the placed gates.
 // Positions are computed from fixed cell sizes; all colours come from CSS (Canvas.css).
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { formatAngle, formatAngleShort } from '../../model/angle'
 import { occupiedSpan } from '../../model/circuit'
 import { GATES, type Circuit, type Operation } from '../../model/types'
@@ -154,8 +154,20 @@ function GateView({ op, selected, dragging, onSelect }: GateViewProps) {
     .filter(Boolean)
     .join(' ')
 
+  // A gate that becomes selected (placed by a palette click, dropped, or moved with the arrow
+  // keys) may sit outside the scrolled canvas: bring it into view. 'nearest' does nothing when
+  // it is already visible, so ordinary clicks never make the canvas jump.
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    // jsdom (tests) has no scrollIntoView.
+    if (selected && el && typeof el.scrollIntoView === 'function')
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [selected, op.column, min, max])
+
   return (
     <div
+      ref={ref}
       className={className}
       style={{
         left: op.column * COL_W,

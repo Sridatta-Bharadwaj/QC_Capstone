@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { appendGate } from '../../src/components/Canvas/actions'
 import { CanvasView } from '../../src/components/Canvas/CanvasView'
 import { CircuitDndProvider } from '../../src/components/Canvas/CircuitDndProvider'
 import { useCanvasStore } from '../../src/components/Canvas/canvasStore'
@@ -179,5 +180,24 @@ describe('CanvasView gates and inspector', () => {
       key: 'Backspace',
     })
     expect(ops()).toHaveLength(1)
+  })
+})
+
+describe('CanvasView scrolling', () => {
+  afterEach(() => {
+    // jsdom has no scrollIntoView; remove the stub again.
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView
+  })
+
+  it('scrolls a newly placed (selected) gate into view', () => {
+    const scrollIntoView = vi.fn()
+    HTMLElement.prototype.scrollIntoView = scrollIntoView
+    renderCanvas({ numQubits: 1, operations: [] })
+    act(() => {
+      appendGate('H')
+    })
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+    const gate = screen.getByRole('button', { name: 'H on q0, column 0' })
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(gate.closest('.gate'))
   })
 })
