@@ -5,7 +5,12 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { ProblemsPanel } from '../../src/components/BottomPanel/ProblemsPanel'
 import type { CodeEditorProps } from '../../src/components/CodePanel/CodeEditor'
 import { CodePanel } from '../../src/components/CodePanel/CodePanel'
-import { PARSE_DEBOUNCE_MS, hasPendingParse } from '../../src/components/CodePanel/qasmSync'
+import {
+  PARSE_DEBOUNCE_MS,
+  hasPendingParse,
+  useQasmText,
+} from '../../src/components/CodePanel/qasmSync'
+import { StatusBar } from '../../src/components/StatusBar/StatusBar'
 import { useRevealStore } from '../../src/components/CodePanel/revealStore'
 import { useCircuitStore, useProblemsStore, useResultsStore } from '../../src/model/store'
 import { useUiStore } from '../../src/model/uiStore'
@@ -213,5 +218,90 @@ describe('Problems tab', () => {
     act(() => useResultsStore.getState().setError('Invalid qubit count 0'))
     render(<ProblemsPanel />)
     expect(screen.getByText('Simulation failed: Invalid qubit count 0')).toBeVisible()
+  })
+})
+
+describe('canvas edit over code with errors', () => {
+  const notice = () => screen.queryAllByTestId('replaced-notice')
+  const addX = () =>
+    act(() => {
+      useCircuitStore.getState().addOperation({ gate: 'X', column: 0, qubits: [0] }, 'canvas')
+    })
+
+  beforeEach(() => act(() => useQasmText.setState({ replacedByCanvas: false })))
+
+  it('shows a notice in the code panel and the Problems tab, cleared by the next edit', () => {
+    render(
+      <>
+        <CodePanel />
+        <ProblemsPanel />
+      </>,
+    )
+    type('OPENQASM 2.0;\nqreg q[2];\nfoo q[0]; // half-typed\n')
+    advance(PARSE_DEBOUNCE_MS)
+    expect(notice()).toHaveLength(0)
+
+    addX()
+    expect(editor().value).toContain('x q[0];')
+    expect(notice()).toHaveLength(2)
+    expect(notice()[0]).toHaveTextContent(
+      'Code with errors was replaced by a canvas edit. Press Ctrl+Z in the editor to get it back.',
+    )
+
+    type(editor().value + '// edit\n')
+    expect(notice()).toHaveLength(0)
+  })
+
+  it('also when the invalid text was still waiting for its parse', () => {
+    render(<CodePanel />)
+    type('OPENQASM 2.0;\nqreg q[2];\nfoo q[0];\n')
+    advance(100)
+    addX()
+    expect(notice()).toHaveLength(1)
+  })
+
+  it('no notice when the replaced code was valid, and it can be dismissed', () => {
+    render(<CodePanel />)
+    type(VALID)
+    advance(PARSE_DEBOUNCE_MS)
+    addX()
+    expect(notice()).toHaveLength(0)
+
+    act(() => useQasmText.setState({ replacedByCanvas: true }))
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notice' }))
+    expect(notice()).toHaveLength(0)
+  })
+})
+
+describe('status bar while the QASM has errors', () => {
+  it('says the circuit is the last valid one and opens the Problems tab', () => {
+    act(() => useUiStore.setState({ bottomTab: 'bloch' }))
+    render(
+      <>
+        <CodePanel />
+        <StatusBar />
+      </>,
+    )
+    expect(screen.queryByTestId('status-stale')).not.toBeInTheDocument()
+    type(INVALID)
+    advance(PARSE_DEBOUNCE_MS)
+    const item = screen.getByTestId('status-stale')
+    expect(item).toHaveTextContent('QASM has errors — showing last valid circuit')
+    fireEvent.click(item)
+    expect(useUiStore.getState().bottomTab).toBe('problems')
+
+    type(VALID)
+    advance(PARSE_DEBOUNCE_MS)
+    expect(screen.queryByTestId('status-stale')).not.toBeInTheDocument()
+  })
+
+  it('ignores warnings', () => {
+    render(<StatusBar />)
+    act(() =>
+      useProblemsStore
+        .getState()
+        .setProblems([{ severity: 'warning', message: 'barrier ignored', line: 1, column: 1 }]),
+    )
+    expect(screen.queryByTestId('status-stale')).not.toBeInTheDocument()
   })
 })

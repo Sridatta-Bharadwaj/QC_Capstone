@@ -36,14 +36,26 @@ describe('BlochCard', () => {
     )
   })
 
-  it('shows the mixed marker only for entangled (mixed) qubits', () => {
+  it('shows the mixed tag in the header only for entangled (mixed) qubits', () => {
     const { rerender } = render(<BlochCard data={mockQubit(0, VECTORS.plus)} />)
-    expect(screen.queryByText(/entangled with other qubits/)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('bloch-mixed')).not.toBeInTheDocument()
     expect(screen.getByText('pure')).toBeInTheDocument()
 
     rerender(<BlochCard data={mockQubit(0, VECTORS.maximallyMixed)} />)
-    expect(screen.getByText('mixed — entangled with other qubits')).toBeInTheDocument()
+    const tag = screen.getByTestId('bloch-mixed')
+    expect(tag).toHaveTextContent('mixed · entangled')
+    expect(tag).toHaveAttribute('title', 'Mixed state: this qubit is entangled with other qubits')
+    expect(tag.closest('header')).not.toBeNull()
+    expect(screen.queryByText('pure')).not.toBeInTheDocument()
     expect(screen.getByTestId('bloch-purity')).toHaveTextContent('0.500')
+  })
+
+  it('puts |r| and purity on one row under the vector', () => {
+    render(<BlochCard data={mockQubit(0, VECTORS.wLike)} />)
+    const rows = document.querySelectorAll('.bloch-card__row')
+    expect(rows).toHaveLength(2)
+    expect(rows[1]).toContainElement(screen.getByTestId('bloch-length'))
+    expect(rows[1]).toContainElement(screen.getByTestId('bloch-purity'))
   })
 
   it('selects the qubit on click and on Enter / Space, and marks the card selected', () => {

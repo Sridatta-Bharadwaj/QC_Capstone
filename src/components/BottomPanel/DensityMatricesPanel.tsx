@@ -8,6 +8,7 @@
 //  - From ρₖ = ½(I + xX + yY + zZ) the Bloch vector is x = 2·Re ρ₀₁, y = −2·Im ρ₀₁,
 //    z = ρ₀₀ − ρ₁₁, and the purity is Tr(ρₖ²) = (1 + |r|²)/2.
 import { useMemo, useState } from 'react'
+import { MathText } from '../common/MathText'
 import { MatrixSkeleton } from '../Teaching/MatrixSkeleton'
 import { MatrixTable } from '../Teaching/MatrixTable'
 import { QubitSelector } from '../Teaching/QubitSelector'
@@ -110,7 +111,11 @@ export function DensityMatricesPanel() {
 
       <section className="teaching-section" aria-label="Full density matrix">
         <h3>
-          Full density matrix <span className="math">ρ = |ψ⟩⟨ψ|</span> ({dim}×{dim})
+          Full density matrix{' '}
+          <span className="math">
+            ρ = <MathText text="|ψ⟩⟨ψ|" />
+          </span>{' '}
+          ({dim}×{dim})
         </h3>
         {numQubits > MAX_DISPLAY_QUBITS ? (
           <p className="teaching-note" data-testid="too-large">

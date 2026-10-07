@@ -39,6 +39,10 @@ export function MatrixTable({
 }: MatrixTableProps) {
   const size = matrix.length
   const interactive = onCellHover !== undefined
+  // Every value cell is as wide as the longest entry (in mono "ch" units), so all columns
+  // have the same width whatever their contents ("0.000" next to "0.250 + 0.250i").
+  const cellChars = Math.max(1, ...matrix.flat().map((z) => formatComplex(z).length))
+  const tableStyle = { '--cell-ch': cellChars } as CSSProperties
 
   return (
     <table
@@ -51,6 +55,7 @@ export function MatrixTable({
         .trim()}
       aria-label={label}
       data-testid={testId}
+      style={tableStyle}
     >
       <thead>
         <tr>

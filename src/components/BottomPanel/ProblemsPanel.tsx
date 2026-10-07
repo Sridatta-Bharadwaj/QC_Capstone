@@ -2,6 +2,7 @@
 // Clicking a parse problem opens the QASM tab with the cursor on that position.
 import { useProblemsStore, useResultsStore } from '../../model/store'
 import type { Problem } from '../../model/types'
+import { ReplacedNotice } from '../CodePanel/ReplacedNotice'
 import { revealProblem } from '../CodePanel/revealStore'
 import './ProblemsPanel.css'
 
@@ -27,7 +28,12 @@ export function ProblemsPanel() {
   const engineError = useResultsStore((s) => s.error)
 
   if (problems.length === 0 && !engineError) {
-    return <div className="empty-state">No problems have been detected in the workspace.</div>
+    return (
+      <div className="problems-empty">
+        <ReplacedNotice />
+        <div className="empty-state">No problems have been detected in the workspace.</div>
+      </div>
+    )
   }
 
   return (

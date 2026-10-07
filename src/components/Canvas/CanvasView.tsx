@@ -5,6 +5,7 @@ import { useEffect, type KeyboardEvent } from 'react'
 import { columnCount } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
 import { MAX_QUBITS } from '../../model/types'
+import { MathText } from '../common/MathText'
 import { deleteSelected, nudgeSelected } from './actions'
 import { useCanvasStore } from './canvasStore'
 import { CircuitGrid } from './CircuitGrid'
@@ -47,6 +48,8 @@ export function CanvasView() {
 
   const selectedOp = circuit.operations.find((o) => o.id === selectedOpId) ?? null
   const n = circuit.numQubits
+  const atMax = n >= MAX_QUBITS
+  const atMin = n <= 1
 
   useEffect(() => {
     if (!hint) return
@@ -85,9 +88,9 @@ export function CanvasView() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Add qubit"
-          title="Add qubit"
-          disabled={n >= MAX_QUBITS}
+          aria-label={atMax ? `Add qubit (maximum of ${MAX_QUBITS} qubits reached)` : 'Add qubit'}
+          title={atMax ? `Maximum of ${MAX_QUBITS} qubits reached` : 'Add qubit'}
+          disabled={atMax}
           onClick={addQubit}
         >
           <span className="codicon codicon-add" aria-hidden="true" />
@@ -95,9 +98,9 @@ export function CanvasView() {
         <button
           type="button"
           className="icon-button"
-          aria-label="Remove qubit"
-          title="Remove bottom qubit (and its gates)"
-          disabled={n <= 1}
+          aria-label={atMin ? 'Remove qubit (at least one qubit is needed)' : 'Remove qubit'}
+          title={atMin ? 'At least one qubit is needed' : 'Remove bottom qubit (and its gates)'}
+          disabled={atMin}
           onClick={removeQubit}
         >
           <span className="codicon codicon-remove" aria-hidden="true" />
@@ -130,8 +133,8 @@ export function CanvasView() {
         />
         {circuit.operations.length === 0 && (
           <p className="canvas__empty" data-testid="canvas-empty">
-            No gates yet: every qubit is in |0⟩. Drag a gate from the palette onto a wire, click a
-            gate in the palette to append it, or pick a preset.
+            <MathText text="No gates yet: every qubit is in |0⟩." /> Drag a gate from the palette
+            onto a wire, click a gate in the palette to append it, or pick a preset.
           </p>
         )}
       </div>

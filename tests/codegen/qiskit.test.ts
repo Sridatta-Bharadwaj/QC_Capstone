@@ -9,8 +9,9 @@ function op(gate: GateType, column: number, qubits: number[], angle?: number): O
   return { id: `t${nextId}`, gate, column, qubits, ...(angle === undefined ? {} : { angle }) }
 }
 
+const PI_IMPORT = 'from math import pi\n\n'
 const IMPORTS =
-  'from math import pi\n\nfrom qiskit import QuantumCircuit\n' +
+  'from qiskit import QuantumCircuit\n' +
   'from qiskit.quantum_info import Statevector, partial_trace\n\n'
 
 const TRACE =
@@ -67,7 +68,10 @@ describe('toQiskit', () => {
       operations: [op('CX', 1, [0, 1]), op('RX', 2, [1], Math.PI / 2), op('H', 0, [0])],
     }
     expect(toQiskit(circuit)).toBe(
-      IMPORTS + 'qc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)\nqc.rx(pi/2, 1)\n' + TRACE,
+      PI_IMPORT +
+        IMPORTS +
+        'qc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)\nqc.rx(pi/2, 1)\n' +
+        TRACE,
     )
   })
 
@@ -89,13 +93,22 @@ describe('toQiskit', () => {
 
   it('uses DensityMatrix for a 1-qubit circuit (nothing to trace out)', () => {
     expect(toQiskit({ numQubits: 1, operations: [op('H', 0, [0])] })).toBe(
-      'from math import pi\n\nfrom qiskit import QuantumCircuit\n' +
+      'from qiskit import QuantumCircuit\n' +
         'from qiskit.quantum_info import DensityMatrix, Statevector\n\n' +
         'qc = QuantumCircuit(1)\nqc.h(0)\n\n' +
         '# Only one qubit, so there is nothing to trace out:\n' +
         '# its reduced density matrix is the full density matrix |psi><psi|.\n' +
         'state = Statevector(qc)\nrho = [DensityMatrix(state)]\n',
     )
+  })
+
+  it('imports pi only when an angle uses it', () => {
+    const rx = (angle: number) => toQiskit({ numQubits: 2, operations: [op('RX', 0, [0], angle)] })
+    expect(rx(Math.PI / 2).startsWith(PI_IMPORT + 'from qiskit import')).toBe(true)
+    expect(rx(-Math.PI).startsWith(PI_IMPORT)).toBe(true)
+    expect(rx(0.25)).not.toContain('from math import pi')
+    expect(rx(0.25).startsWith(IMPORTS)).toBe(true)
+    expect(toQiskit({ numQubits: 2, operations: [op('H', 0, [0])] })).not.toContain('math')
   })
 
   it('handles a 6-qubit circuit', () => {
@@ -131,7 +144,8 @@ describe('toQiskit presets', () => {
 
   it.each(Object.keys(body))('%s', (id) => {
     const preset = PRESETS.find((p) => p.id === id)!
-    expect(toQiskit(preset.circuit)).toBe(IMPORTS + body[id] + TRACE)
+    const imports = body[id].includes('pi') ? PI_IMPORT + IMPORTS : IMPORTS
+    expect(toQiskit(preset.circuit)).toBe(imports + body[id] + TRACE)
   })
 
   it('plus (single qubit)', () => {

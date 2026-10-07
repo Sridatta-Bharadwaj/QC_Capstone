@@ -7,6 +7,7 @@
 // where all OTHER qubits are equal in row and column; add them up.
 import { useState } from 'react'
 import type { Complex, TraceEntry } from '../../engine/types'
+import { MathText } from '../common/MathText'
 import { BasisKet } from '../Teaching/BasisKet'
 import { MatrixSkeleton } from '../Teaching/MatrixSkeleton'
 import { MatrixTable } from '../Teaching/MatrixTable'
@@ -195,7 +196,9 @@ export function TraceStepsPanel() {
       <ol className="steps">
         <li className="step">
           <div className="step__body">
-            <h3>The state |ψ⟩</h3>
+            <h3>
+              The state <MathText text="|ψ⟩" />
+            </h3>
             <p>
               The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
               listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bit of {name} is
@@ -207,7 +210,12 @@ export function TraceStepsPanel() {
 
         <li className="step">
           <div className="step__body">
-            <h3>Density matrix ρ = |ψ⟩⟨ψ|</h3>
+            <h3>
+              Density matrix{' '}
+              <span className="math">
+                ρ = <MathText text="|ψ⟩⟨ψ|" />
+              </span>
+            </h3>
             <p>
               Each entry is{' '}
               <span className="math">

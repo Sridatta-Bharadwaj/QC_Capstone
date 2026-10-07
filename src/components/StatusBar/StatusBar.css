@@ -43,3 +43,22 @@
   text-overflow: ellipsis;
   color: var(--color-error);
 }
+
+.status-bar__button {
+  height: 100%;
+  padding: 0 var(--sp-1);
+  margin: 0 calc(-1 * var(--sp-1));
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.status-bar__button:hover {
+  background: var(--color-bg-hover);
+}
+
+.status-bar__warning {
+  color: var(--color-warning);
+}

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { appendGate } from '../../src/components/Canvas/actions'
 import { CanvasView } from '../../src/components/Canvas/CanvasView'
 import { CircuitDndProvider } from '../../src/components/Canvas/CircuitDndProvider'
 import { useCanvasStore } from '../../src/components/Canvas/canvasStore'
@@ -36,6 +37,8 @@ describe('CanvasView toolbar', () => {
     for (let i = 2; i < MAX_QUBITS; i++) fireEvent.click(add)
     expect(useCircuitStore.getState().circuit.numQubits).toBe(MAX_QUBITS)
     expect(add).toBeDisabled()
+    expect(add).toHaveAccessibleName(`Add qubit (maximum of ${MAX_QUBITS} qubits reached)`)
+    expect(add).toHaveAttribute('title', `Maximum of ${MAX_QUBITS} qubits reached`)
     expect(screen.getAllByRole('button', { name: /^Select qubit/ })).toHaveLength(MAX_QUBITS)
   })
 
@@ -46,6 +49,7 @@ describe('CanvasView toolbar', () => {
     fireEvent.click(remove)
     expect(useCircuitStore.getState().circuit.numQubits).toBe(1)
     expect(remove).toBeDisabled()
+    expect(remove).toHaveAttribute('title', 'At least one qubit is needed')
   })
 
   it('shows an empty-circuit hint only while there are no gates', () => {
@@ -106,14 +110,40 @@ describe('CanvasView gates and inspector', () => {
     expect(input).toHaveValue('-3*pi/4')
   })
 
-  it('rejects an invalid angle with an inline error and keeps the old one', () => {
+  it('rejects an invalid angle on Enter with an inline error and keeps the old one', () => {
     renderCanvas(rx, 'rx')
     const input = screen.getByRole('textbox', { name: 'Rotation angle' })
     fireEvent.change(input, { target: { value: 'pi/' } })
-    fireEvent.blur(input)
+    fireEvent.keyDown(input, { key: 'Enter' })
     expect(screen.getByRole('alert')).toHaveTextContent('Invalid angle')
     expect(input).toHaveAttribute('aria-invalid', 'true')
+    expect(input).toHaveValue('pi/')
     expect(ops()[0].angle).toBe(Math.PI / 2)
+  })
+
+  it.each(['abc', ''])('reverts invalid text %j to the current angle on blur', (text) => {
+    renderCanvas(rx, 'rx')
+    const input = screen.getByRole('textbox', { name: 'Rotation angle' })
+    fireEvent.change(input, { target: { value: text } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(screen.getByRole('alert')).toBeInTheDocument()
+    fireEvent.blur(input)
+    expect(input).toHaveValue('pi/2')
+    expect(input).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(ops()[0].angle).toBe(Math.PI / 2)
+  })
+
+  it('commits a valid angle on blur and reverts with Escape', () => {
+    renderCanvas(rx, 'rx')
+    const input = screen.getByRole('textbox', { name: 'Rotation angle' })
+    fireEvent.change(input, { target: { value: 'pi' } })
+    fireEvent.blur(input)
+    expect(ops()[0].angle).toBeCloseTo(Math.PI)
+    fireEvent.change(input, { target: { value: 'nonsense' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(input).toHaveValue('pi')
+    expect(ops()[0].angle).toBeCloseTo(Math.PI)
   })
 
   it('re-targets qubits, swapping roles when needed', () => {
@@ -153,5 +183,24 @@ describe('CanvasView gates and inspector', () => {
       key: 'Backspace',
     })
     expect(ops()).toHaveLength(1)
+  })
+})
+
+describe('CanvasView scrolling', () => {
+  afterEach(() => {
+    // jsdom has no scrollIntoView; remove the stub again.
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView
+  })
+
+  it('scrolls a newly placed (selected) gate into view', () => {
+    const scrollIntoView = vi.fn()
+    HTMLElement.prototype.scrollIntoView = scrollIntoView
+    renderCanvas({ numQubits: 1, operations: [] })
+    act(() => {
+      appendGate('H')
+    })
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', inline: 'nearest' })
+    const gate = screen.getByRole('button', { name: 'H on q0, column 0' })
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(gate.closest('.gate'))
   })
 })

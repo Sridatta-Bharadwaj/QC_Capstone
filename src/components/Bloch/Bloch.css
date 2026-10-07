@@ -1,17 +1,20 @@
-/* Bloch spheres panel. Colours only from tokens (src/styles/tokens.css). */
+/* Bloch spheres panel. Colours only from tokens (src/styles/tokens.css).
+ * Card and sphere sizes are computed from the panel size in layout.ts; the paddings,
+ * gaps and fixed heights below are mirrored there, keep the two in sync. */
 
 .bloch-grid {
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  padding: var(--sp-2);
 }
 
 .bloch-card {
   display: flex;
   flex-direction: column;
-  width: 184px;
+  width: var(--bloch-card-w, 176px);
+  container-type: inline-size;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
@@ -32,8 +35,10 @@
   align-items: center;
   gap: var(--sp-2);
   height: 24px;
+  flex: none;
   padding: 0 var(--sp-1) 0 var(--sp-2);
   border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
 }
 
 .bloch-card__title {
@@ -50,6 +55,16 @@
 .bloch-card__state {
   font-size: var(--fs-xs);
   color: var(--color-text-subtle);
+}
+
+/* Mixed (entangled) qubit: a small outlined tag instead of a sentence under the numbers. */
+.bloch-card__tag {
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--fs-xs);
+  line-height: 16px;
 }
 
 .bloch-card__link {
@@ -75,16 +90,20 @@
   border-radius: 0 0 var(--radius) var(--radius);
 }
 
+/* 4 px above the sphere so the |0⟩ label clears the header rule. */
 .bloch-card__sphere {
   display: flex;
   justify-content: center;
+  padding-top: var(--sp-1);
 }
 
+/* Two fixed 16 px rows: r, then |r| and purity (heights mirrored in layout.ts). */
 .bloch-card__stats {
   display: flex;
   flex-direction: column;
+  flex: none;
   gap: 2px;
-  padding: 0 var(--sp-2) var(--sp-2);
+  padding: 0 var(--sp-2) 6px;
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
@@ -93,7 +112,9 @@
 .bloch-card__row {
   display: flex;
   align-items: baseline;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
+  height: 16px;
+  line-height: 16px;
   white-space: nowrap;
 }
 
@@ -109,10 +130,24 @@
   margin-left: var(--sp-2);
 }
 
-.bloch-card__mixed {
-  margin: 2px 0 0;
-  font-family: var(--font-ui);
-  color: var(--color-text-muted);
+/* Narrow cards (many qubits on a small screen): keep every number visible.
+ * Widths: "r (−0.577, −0.577, −0.577)" in 11 px mono is ~170 px, the long tag ~95 px. */
+@container (max-width: 209px) {
+  .bloch-card__tag-extra {
+    display: none;
+  }
+}
+
+@container (max-width: 189px) {
+  .bloch-card__key--r {
+    display: none;
+  }
+
+  .bloch-card__stats {
+    padding-left: var(--sp-1);
+    padding-right: var(--sp-1);
+    word-spacing: -2px;
+  }
 }
 
 /* The 3D canvas (transparent: the card colour shows through) and its label overlay. */
@@ -169,10 +204,11 @@
   width: 100%;
 }
 
-/* While the worker is computing (> 150 ms) the cards are hidden under a skeleton overlay. */
+/* Exactly the tab panel's size: it is measured to size the cards (layout.ts).
+ * While the worker is computing (> 150 ms) the cards are hidden under a skeleton overlay. */
 .bloch-panel {
   position: relative;
-  min-height: 100%;
+  height: 100%;
 }
 
 .bloch-panel__stale {
