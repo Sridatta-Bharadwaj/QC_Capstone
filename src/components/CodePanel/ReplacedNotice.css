@@ -1,0 +1,29 @@
+/* "Code with errors was replaced" notice: a plain info row, like a VS Code inline message. */
+.replaced-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+  padding: 2px var(--sp-1) 2px var(--sp-3);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-panel);
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  line-height: 18px;
+}
+
+.replaced-notice__icon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.replaced-notice__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.replaced-notice__close {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}

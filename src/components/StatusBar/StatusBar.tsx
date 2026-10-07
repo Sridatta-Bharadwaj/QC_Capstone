@@ -1,6 +1,7 @@
 // Status bar: qubit count, entangled qubits, purity per qubit, engine state.
 // Purity Tr(ρₖ²) is 1 for a pure qubit and 0.5 for a maximally mixed one.
-import { useCircuitStore, useResultsStore } from '../../model/store'
+import { useCircuitStore, useProblemsStore, useResultsStore } from '../../model/store'
+import { useUiStore } from '../../model/uiStore'
 import { MAX_QUBITS } from '../../model/types'
 import { formatReal, qubitList } from '../Teaching/format'
 import './StatusBar.css'
@@ -10,6 +11,10 @@ export function StatusBar() {
   const analysis = useResultsStore((s) => s.analysis)
   const computing = useResultsStore((s) => s.computing)
   const error = useResultsStore((s) => s.error)
+  // While the QASM has errors, the circuit (and everything computed from it) is the last valid
+  // one, not what the editor shows. Say so, and link to the Problems tab.
+  const qasmHasErrors = useProblemsStore((s) => s.problems.some((p) => p.severity === 'error'))
+  const setBottomTab = useUiStore((s) => s.setBottomTab)
 
   const qubits = analysis?.qubits ?? []
   const entangled = qubitList(qubits.filter((q) => q.entangled).map((q) => q.qubit))
@@ -46,6 +51,19 @@ export function StatusBar() {
             </span>
           ))}
         </span>
+      )}
+
+      {qasmHasErrors && (
+        <button
+          type="button"
+          className="status-bar__item status-bar__button status-bar__warning"
+          data-testid="status-stale"
+          title="The circuit, spheres and matrices are from the last QASM that parsed. Click to see the problems."
+          onClick={() => setBottomTab('problems')}
+        >
+          <span className="codicon codicon-warning" aria-hidden="true" />
+          QASM has errors — showing last valid circuit
+        </button>
       )}
 
       {computing && (

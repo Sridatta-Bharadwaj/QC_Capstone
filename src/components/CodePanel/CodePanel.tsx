@@ -9,6 +9,7 @@ import { SkeletonGroup, SkeletonLines } from '../common/Skeleton'
 import { TabPanel, Tabs } from '../common/Tabs'
 import './CodePanel.css'
 import { editQasm, useQasmText } from './qasmSync'
+import { ReplacedNotice } from './ReplacedNotice'
 import { useRevealStore } from './revealStore'
 
 // Monaco is large, so the editor is its own chunk, loaded after the workspace renders.
@@ -86,6 +87,7 @@ export function CodePanel() {
         label="Code"
         actions={<CopyButton text={code} />}
       />
+      {isQasm && <ReplacedNotice />}
       <TabPanel id={tab}>
         <Suspense fallback={<EditorSkeleton />}>
           <CodeEditor

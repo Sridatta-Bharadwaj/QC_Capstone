@@ -57,3 +57,16 @@ button.problems__item:hover {
 .problems__position {
   font-variant-numeric: tabular-nums;
 }
+
+/* No problems: the optional "code was replaced" notice on top, the empty state below it. */
+.problems-empty {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.problems-empty .empty-state {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
