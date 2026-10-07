@@ -177,8 +177,13 @@
   pointer-events: none;
 }
 
+/* Equal column widths: every value is as wide as the longest entry of the table (--cell-ch,
+ * set by MatrixTable). On the span, because browsers ignore min-width on table cells. */
 .matrix__value {
   position: relative;
+  display: inline-block;
+  min-width: calc(var(--cell-ch, 5) * 1ch);
+  text-align: right;
 }
 
 .matrix__cell--zero {
