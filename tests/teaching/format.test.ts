@@ -49,7 +49,7 @@ describe('formatComplex', () => {
 describe('formatScientific', () => {
   it('prints exact zero as 0 and small numbers in e-notation', () => {
     expect(formatScientific(0)).toBe('0')
-    expect(formatScientific(1.234e-16)).toBe('1.2e-16')
+    expect(formatScientific(1.234e-16)).toBe('1.2e−16')
   })
 })
 

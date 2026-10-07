@@ -48,9 +48,19 @@ describe('CanvasView toolbar', () => {
     expect(remove).toBeDisabled()
   })
 
+  it('shows an empty-circuit hint only while there are no gates', () => {
+    renderCanvas()
+    expect(screen.getByTestId('canvas-empty')).toHaveTextContent('pick a preset')
+    cleanup()
+    renderCanvas({ numQubits: 2, operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }] })
+    expect(screen.queryByTestId('canvas-empty')).not.toBeInTheDocument()
+  })
+
   it('clears all gates', () => {
     renderCanvas({ numQubits: 2, operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }] })
+    expect(screen.queryByTestId('canvas-empty')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
+    expect(screen.getByTestId('canvas-empty')).toBeInTheDocument()
     expect(ops()).toHaveLength(0)
     expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled()
   })

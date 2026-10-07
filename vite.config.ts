@@ -8,6 +8,11 @@ export default defineConfig({
   // Relative asset paths so the production build also works when opened
   // from a sub-path or served locally with `npm run preview`.
   base: './',
+  build: {
+    // three.js (~950 kB) and Monaco (~3.2 MB) are intentionally split into lazy chunks that
+    // load after the workspace is visible, so Vite's default 500 kB warning is just noise here.
+    chunkSizeWarningLimit: 4000,
+  },
   worker: {
     format: 'es',
   },

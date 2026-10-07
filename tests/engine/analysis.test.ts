@@ -375,6 +375,15 @@ describe('analyze: all presets', () => {
     expectBloch(analyze(findPreset('plus')!.circuit).qubits[0].bloch, { x: 1, y: 0, z: 0 })
   })
 
+  it('partial preset: both qubits partly mixed, r = (0, 0, 0.5), purity 0.625', () => {
+    for (const q of analyze(findPreset('partial')!.circuit).qubits) {
+      expectBloch(q.bloch, { x: 0, y: 0, z: 0.5 })
+      expect(q.length).toBeCloseTo(0.5, 12)
+      expect(q.purity).toBeCloseTo(0.625, 12)
+      expect(q.entangled).toBe(true)
+    }
+  })
+
   it('result is plain data (survives structuredClone, i.e. postMessage)', () => {
     const a = analyze(findPreset('bell')!.circuit)
     expect(structuredClone(a)).toEqual(a)

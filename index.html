@@ -21,9 +21,216 @@
         document.documentElement.dataset.theme = t
       })()
     </script>
+    <style>
+      /*
+       * Initial-load skeleton of the workspace (PLAN.md -> Skeleton loaders): shown while the JS
+       * bundle downloads, replaced by React on mount. Inline because the app CSS is not loaded
+       * yet; the colours mirror src/styles/tokens.css (checked by tests/design/bootSkeleton.test.ts).
+       */
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+      }
+      .boot {
+        --b-bg: #ffffff;
+        --b-sidebar: #f3f3f3;
+        --b-panel: #f8f8f8;
+        --b-titlebar: #ececec;
+        --b-statusbar: #f3f3f3;
+        --b-border: #e0e0e0;
+        --b-skel: #e6e6e6;
+        --b-shine: #f2f2f2;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--b-bg);
+        overflow: hidden;
+      }
+      html[data-theme='dark'] .boot {
+        --b-bg: #1f1f1f;
+        --b-sidebar: #181818;
+        --b-panel: #181818;
+        --b-titlebar: #181818;
+        --b-statusbar: #181818;
+        --b-border: #2b2b2b;
+        --b-skel: #2a2a2a;
+        --b-shine: #333333;
+      }
+      html[data-theme='dark'] body {
+        background: #1f1f1f;
+      }
+      .boot__bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        padding: 0 12px;
+      }
+      .boot__title {
+        height: 32px;
+        background: var(--b-titlebar);
+        border-bottom: 1px solid var(--b-border);
+      }
+      .boot__status {
+        height: 22px;
+        background: var(--b-statusbar);
+        border-top: 1px solid var(--b-border);
+      }
+      .boot__body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+      .boot__sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 16%;
+        min-width: 160px;
+        padding: 12px;
+        background: var(--b-sidebar);
+        border-right: 1px solid var(--b-border);
+        box-sizing: border-box;
+      }
+      .boot__main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 0;
+      }
+      .boot__top {
+        display: flex;
+        height: 60%;
+        border-bottom: 1px solid var(--b-border);
+      }
+      .boot__canvas {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 64%;
+        padding: 12px;
+        background: var(--b-bg);
+        border-right: 1px solid var(--b-border);
+        box-sizing: border-box;
+      }
+      .boot__code {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        padding: 12px 12px 12px 44px;
+        background: var(--b-panel);
+      }
+      .boot__bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex: 1;
+        padding: 12px;
+        background: var(--b-panel);
+      }
+      .boot__row {
+        display: flex;
+        gap: 4px;
+      }
+      .boot i {
+        display: block;
+        height: 12px;
+        border-radius: 2px;
+        background-color: var(--b-skel);
+        background-image: linear-gradient(
+          90deg,
+          transparent 0%,
+          var(--b-shine) 50%,
+          transparent 100%
+        );
+        background-size: 200% 100%;
+        background-repeat: no-repeat;
+        animation: boot-shimmer 1.4s linear infinite;
+      }
+      .boot .boot__gate {
+        width: 32px;
+        height: 32px;
+      }
+      .boot .boot__wire {
+        height: 2px;
+        margin: 20px 0;
+      }
+      .boot .boot__card {
+        width: 184px;
+        height: 220px;
+        border-radius: 4px;
+      }
+      @keyframes boot-shimmer {
+        from {
+          background-position: 150% 0;
+        }
+        to {
+          background-position: -50% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot i {
+          animation: none;
+          background-image: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" role="status" aria-busy="true">
+        <span
+          style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)"
+          >Loading workspace</span
+        >
+        <div class="boot__bar boot__title"><i style="width: 160px"></i></div>
+        <div class="boot__body">
+          <div class="boot__sidebar">
+            <i style="width: 48px; height: 10px"></i>
+            <div class="boot__row">
+              <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
+              ><i class="boot__gate"></i><i class="boot__gate"></i>
+            </div>
+            <div class="boot__row">
+              <i class="boot__gate"></i><i class="boot__gate"></i><i class="boot__gate"></i
+              ><i class="boot__gate"></i>
+            </div>
+            <i style="width: 56px; height: 10px; margin-top: 16px"></i>
+            <i style="width: 80%"></i>
+            <i style="width: 90%"></i>
+            <i style="width: 70%"></i>
+          </div>
+          <div class="boot__main">
+            <div class="boot__top">
+              <div class="boot__canvas">
+                <i style="width: 56px; height: 10px"></i>
+                <i class="boot__wire" style="width: 80%"></i>
+                <i class="boot__wire" style="width: 80%"></i>
+              </div>
+              <div class="boot__code">
+                <i style="width: 40%"></i>
+                <i style="width: 55%"></i>
+                <i style="width: 20%"></i>
+                <i style="width: 35%"></i>
+              </div>
+            </div>
+            <div class="boot__bottom">
+              <div class="boot__row" style="gap: 24px">
+                <i style="width: 88px; height: 10px"></i><i style="width: 104px; height: 10px"></i
+                ><i style="width: 120px; height: 10px"></i><i style="width: 64px; height: 10px"></i>
+              </div>
+              <div class="boot__row" style="gap: 8px">
+                <i class="boot__card"></i><i class="boot__card"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="boot__bar boot__status"><i style="width: 220px; height: 10px"></i></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

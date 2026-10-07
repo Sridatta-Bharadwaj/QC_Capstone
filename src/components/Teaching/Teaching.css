@@ -33,7 +33,7 @@
 
 .qubit-selector {
   display: inline-flex;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius);
   overflow: hidden;
 }
@@ -43,7 +43,7 @@
   height: 22px;
   padding: 0 var(--sp-2);
   border: 0;
-  border-left: 1px solid var(--color-border-strong);
+  border-left: 1px solid var(--color-border-input);
   background: var(--color-bg);
   color: var(--color-text-muted);
   font-family: var(--font-mono);
@@ -202,6 +202,16 @@
 .matrix--compact th,
 .matrix--compact .matrix__cell {
   padding: 1px var(--sp-1);
+}
+
+/* 16×16 (n = 4): smaller type and tighter cells so the whole matrix fits a laptop panel. */
+.matrix--dense {
+  font-size: 10px;
+}
+
+.matrix--dense th,
+.matrix--dense .matrix__cell {
+  padding: 0 3px;
 }
 
 /* Key–value list of derived quantities next to the reduced ρ. */

@@ -121,6 +121,7 @@ describe('toQiskit presets', () => {
       'qc = QuantumCircuit(3)\nqc.ry(1.91063323625, 0)\nqc.ry(pi/4, 1)\nqc.cx(0, 1)\n' +
       'qc.ry(-pi/4, 1)\nqc.cx(0, 1)\nqc.cx(1, 2)\nqc.cx(0, 1)\nqc.x(0)\n',
     product: 'qc = QuantumCircuit(3)\nqc.h(0)\nqc.x(1)\nqc.h(2)\nqc.s(2)\n',
+    partial: 'qc = QuantumCircuit(2)\nqc.ry(pi/3, 0)\nqc.cx(0, 1)\n',
   }
 
   it('covers every multi-qubit preset', () => {

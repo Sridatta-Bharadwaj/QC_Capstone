@@ -35,6 +35,31 @@ export const PRESETS: Preset[] = [
     circuit: build('plus', 1, [['H', 0, [0]]]),
   },
   {
+    id: 'product',
+    name: 'Product state |+⟩|1⟩|i⟩',
+    description:
+      'No entanglement: each qubit stays on the sphere surface, pointing to +x, −z and +y.',
+    circuit: build('product', 3, [
+      ['H', 0, [0]],
+      ['X', 0, [1]],
+      ['H', 0, [2]],
+      ['S', 1, [2]],
+    ]),
+  },
+  {
+    id: 'partial',
+    name: 'Partially entangled pair',
+    description:
+      'Ry(π/3) then CX: cos(π/6)|00⟩ + sin(π/6)|11⟩. Each qubit is partly mixed: r points along +z with length 0.5, purity 0.625.',
+    // Ry(θ)|0⟩ = cos(θ/2)|0⟩ + sin(θ/2)|1⟩; the CX copies that bit onto q1. Each reduced
+    // ρ is diag(cos²(θ/2), sin²(θ/2)), so z = cos θ = 0.5: between a product state (|r| = 1)
+    // and a Bell state (|r| = 0).
+    circuit: build('partial', 2, [
+      ['RY', 0, [0], Math.PI / 3],
+      ['CX', 1, [0, 1]],
+    ]),
+  },
+  {
     id: 'bell',
     name: 'Bell state Φ⁺',
     description:
@@ -70,18 +95,6 @@ export const PRESETS: Preset[] = [
       ['CX', 4, [1, 2]],
       ['CX', 5, [0, 1]],
       ['X', 6, [0]],
-    ]),
-  },
-  {
-    id: 'product',
-    name: 'Product state |+⟩|1⟩|i⟩',
-    description:
-      'No entanglement: each qubit stays on the sphere surface, pointing to +x, −z and +y.',
-    circuit: build('product', 3, [
-      ['H', 0, [0]],
-      ['X', 0, [1]],
-      ['H', 0, [2]],
-      ['S', 1, [2]],
     ]),
   },
 ]

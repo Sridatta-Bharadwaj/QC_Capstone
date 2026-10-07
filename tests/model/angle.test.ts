@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatAngle, parseAngle } from '../../src/model/angle'
+import { formatAngle, formatAngleShort, parseAngle } from '../../src/model/angle'
 
 describe('parseAngle', () => {
   it.each([
@@ -41,5 +41,18 @@ describe('formatAngle', () => {
 
   it('supports a custom pi symbol', () => {
     expect(formatAngle(Math.PI / 2, 'π')).toBe('π/2')
+  })
+})
+
+describe('formatAngleShort (gate box label)', () => {
+  it.each([
+    [0, '0'],
+    [Math.PI / 2, 'π/2'],
+    [(-3 * Math.PI) / 4, '−3π/4'],
+    [2 * Math.acos(1 / Math.sqrt(3)), '1.911'],
+    [-0.123456, '−0.1235'],
+    [0.3, '0.3'],
+  ])('%f → %s', (radians, text) => {
+    expect(formatAngleShort(radians)).toBe(text)
   })
 })
