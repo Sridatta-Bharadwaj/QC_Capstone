@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 build in progress (V2-0 merged; wave 1 running)_
+_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-4 merged; V2-1, V2-8, V2-7 running)_
 
 ## Current phase
 v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
@@ -23,9 +23,10 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - [x] **Independent review + fixes** (2026-10-07, `fix-review`): no blockers. Fixed: Bloch cards sized from panel (`Bloch/layout.ts`, `useElementSize.ts`) so 6 spheres fit at 1280×720; notice when a canvas edit replaces QASM with errors (`CodePanel/ReplacedNotice.tsx`); status-bar "QASM has errors — showing last valid circuit"; inspector reverts invalid angle on blur; selected gate scrolls into view; `common/MathText.tsx` for ⟨ ⟩ and ⁺ glyphs; even matrix columns; boot/teaching skeletons match layout; disabled-button tooltips; Qiskit imports `pi` only when used. 785 tests
 
 - [x] **V2-0 — Contracts** (2026-10-08, `v2-0-contracts`): `model/types.ts` (ChangeSource split, `InitialState`/`initialStates`, `CodeTab`, `Problem.tab`, limits `MAX_OPERATIONS`/`MAX_UPLOAD_BYTES`/`MAX_URL_BYTES`), `model/circuit.ts` (`defaultInitialStates`, `resizeInitialStates`, `circuitsEqual` + `assignOperationIds` moved here), `model/validate.ts` (`validateCircuit`, implemented), `model/historyStore.ts` (implemented, `coalesceKey`), `model/store.ts` (`setInitialState`), `engine/{simulator,bloch,subset,types,index}.ts` (`productState`, `simulateSteps`, subset stubs), `worker/{protocol,handleRequest,engineClient}.ts` ('steps'/'subset' requests, `step` on analyze, `EngineClient.send`). 832 tests, verify 378/378
+- [x] **V2-4 — Autosave, undo/redo, shareable URL** (2026-10-08, `v2-4-history-persistence`): `src/persistence/{base64url,shareLink,autosave,startup,copyLink}.ts`, `src/history/{history,shortcuts}.ts`, `src/components/Notices/*`, TitleBar (Undo/Redo/New circuit/Copy link), `App.tsx`, `main.tsx` (`initPersistence()` before render). Link format `#c=<base64url({v:1,n,s?,o:[[gate,col,qubits,angle?]]})>`. Coalescing API for V2-6: `runWithHistoryKey(key, fn)`. 908 tests
 
 ## In progress
-- Wave 1: `v2-1-qiskit-sync`, `v2-8-ui-fixes`, `v2-4-history-persistence`, `v2-7-subset-trace`
+- Wave 1: `v2-1-qiskit-sync`, `v2-8-ui-fixes`, `v2-7-subset-trace`
 
 ## Next up
 - Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
@@ -83,6 +84,8 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 | 2026-10-08 | `validateCircuit` always assigns fresh op ids and accepts a missing `initialStates` (= all \|0⟩); columns capped at `MAX_COLUMN` = 1000 | Never trust ids from outside; v1-shaped data still loads |
 | 2026-10-08 | Features needing their own result stream create their own `EngineClient` (own worker); `send()` + `onOtherResult` | Staleness is tracked per client, so steps/subset replies never drop the main analysis |
 | 2026-10-08 | Pushes use `gh` credentials (`git -c credential.helper='!gh auth git-credential' push`) | Git Credential Manager needs an interactive sign-in; `gh` is already authenticated |
+| 2026-10-08 | V2-4: the `#c=` hash is cleared (replaceState) after it is read and the linked circuit is saved at once; `'restore'` resets history instead of pushing; notices live in a fixed bottom-right `NoticeArea` | A stale hash would override later autosaved edits on reload; notices avoid touching AppShell/StatusBar |
+| 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
 ## Open questions
@@ -100,6 +103,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - Monaco bundles its own codicon font under the same family name as @vscode/codicons; new app icons should be checked after Monaco loads.
 - Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
 - `verify/.venv` is gitignored: recreate with `python -m venv verify/.venv` + `pip install -r verify/requirements.txt` (done 2026-10-08). Worktrees share main's `node_modules` and `verify/.venv` via directory junctions.
+- V2-4 open check: an undo while a code-tab parse is still pending (300 ms debounce) might re-apply the old text; verify once V2-1's generalised sync is merged.
 - `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
 
 ## Session log
@@ -110,3 +114,4 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - 2026-10-07 — M9 finished by lead after the M9 agent hit a usage limit; all branches pushed; independent review (no blockers) → `fix-review` merged (785 tests). Known limit: at 1024×768 with 6 qubits the sphere grid wraps and scrolls.
 - 2026-10-08 — Reviewed v1 (two-way QASM sync confirmed working; user was likely typing in the read-only Qiskit tab). Wrote the full v2 spec (V2-0 … V2-9) in PLAN.md.
 - 2026-10-08 — v2 build started: spec committed, V2-0 contracts merged (832 tests, verify 378/378). Wave 1 launched.
+- 2026-10-08 — V2-4 merged (908 tests).

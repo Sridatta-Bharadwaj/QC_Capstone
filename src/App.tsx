@@ -1,5 +1,6 @@
 import { CircuitDndProvider } from './components/Canvas/CircuitDndProvider'
 import { AppShell } from './components/Layout/AppShell'
+import { NoticeArea } from './components/Notices/NoticeArea'
 import { useEngineBridge } from './worker/useEngineBridge'
 
 export default function App() {
@@ -9,6 +10,7 @@ export default function App() {
   return (
     <CircuitDndProvider>
       <AppShell />
+      <NoticeArea />
     </CircuitDndProvider>
   )
 }

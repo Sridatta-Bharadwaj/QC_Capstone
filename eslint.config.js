@@ -6,12 +6,14 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'node_modules', 'verify/.venv', 'verify/out'] },
+  { ignores: ['dist', 'coverage', 'node_modules', 'verify/.venv', 'verify/out', '.worktrees'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       ecmaVersion: 2023,
+      // Pin the root so agent worktrees under .worktrees/ are never candidate tsconfig roots.
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
       globals: { ...globals.browser, ...globals.worker },
     },
     plugins: {
