@@ -3,6 +3,7 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BlochPanel } from '../../src/components/BottomPanel/BlochPanel'
 import { emptyCircuit } from '../../src/model/circuit'
+import { setWebGLSupportForTests } from '../../src/components/Bloch/webgl'
 import { useCircuitStore, useResultsStore } from '../../src/model/store'
 import { VECTORS, mockQubit } from './mockVectors'
 
@@ -11,7 +12,12 @@ vi.mock('../../src/components/Bloch/BlochSphere', () => ({
   BlochSphere: () => <div data-testid="sphere" />,
 }))
 
-afterEach(cleanup)
+// The 3D sphere is mocked above, so pretend WebGL exists (jsdom has none).
+beforeEach(() => setWebGLSupportForTests(true))
+afterEach(() => {
+  cleanup()
+  setWebGLSupportForTests(undefined)
+})
 
 beforeEach(() => {
   useCircuitStore.setState({ circuit: emptyCircuit(3), selectedQubit: null })

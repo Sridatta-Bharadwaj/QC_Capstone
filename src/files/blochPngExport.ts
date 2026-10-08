@@ -18,6 +18,7 @@ import {
   PNG_METRICS,
 } from './blochPng'
 import { downloadFilename, saveBlob } from './download'
+import { hasWebGL } from '../components/Bloch/webgl'
 
 /** Draw at 2× so text and lines stay sharp when the image is zoomed or projected. */
 const SCALE = 2
@@ -69,6 +70,13 @@ async function waitForSpheres(numQubits: number): Promise<HTMLElement[] | null> 
  * message when the spheres are not available.
  */
 export async function exportBlochPng(): Promise<{ filename: string } | { error: string }> {
+  if (!hasWebGL()) {
+    return {
+      error:
+        'Saving the spheres as PNG needs WebGL, which is turned off in this browser. ' +
+        'Use a screenshot instead.',
+    }
+  }
   const numQubits = useCircuitStore.getState().circuit.numQubits
   const spheres = await waitForSpheres(numQubits)
   const analysis = useResultsStore.getState().analysis

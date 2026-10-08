@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { BlochCard } from '../../src/components/Bloch/BlochCard'
 import { BlochGrid } from '../../src/components/Bloch/BlochGrid'
 import type { BlochSphereProps } from '../../src/components/Bloch/BlochSphere'
+import { setWebGLSupportForTests } from '../../src/components/Bloch/webgl'
 import { useCircuitStore } from '../../src/model/store'
 import { useUiStore } from '../../src/model/uiStore'
 import { VECTORS, mockQubit } from './mockVectors'
@@ -15,7 +16,12 @@ vi.mock('../../src/components/Bloch/BlochSphere', () => ({
   ),
 }))
 
-afterEach(cleanup)
+// The 3D sphere is mocked above, so pretend WebGL exists (jsdom has none).
+beforeEach(() => setWebGLSupportForTests(true))
+afterEach(() => {
+  cleanup()
+  setWebGLSupportForTests(undefined)
+})
 
 beforeEach(() => {
   useCircuitStore.setState({ selectedQubit: null })
@@ -23,6 +29,13 @@ beforeEach(() => {
 })
 
 describe('BlochCard', () => {
+  it('uses the flat SVG sphere when WebGL is unavailable', () => {
+    setWebGLSupportForTests(false)
+    const { container } = render(<BlochCard data={mockQubit(0, VECTORS.plus)} />)
+    expect(screen.queryByTestId('sphere')).toBeNull()
+    expect(container.querySelector('.bloch-sphere--svg svg')).not.toBeNull()
+  })
+
   it('shows the qubit name, the vector, |r| and purity to 3 decimals', async () => {
     render(<BlochCard data={mockQubit(2, VECTORS.wLike)} />)
     expect(screen.getByText('q2')).toBeInTheDocument()

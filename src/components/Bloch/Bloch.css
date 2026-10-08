@@ -321,3 +321,59 @@
   font-size: calc(var(--bloch-label-size, 12px) - 2px);
   font-weight: 500;
 }
+
+/* Flat SVG sphere (BlochSphereSvg.tsx): used when WebGL is unavailable. */
+.bloch-sphere--svg svg {
+  display: block;
+  overflow: visible;
+}
+
+.bloch-svg__outline {
+  fill: none;
+  stroke: var(--color-sphere-equator);
+}
+
+.bloch-svg__wire,
+.bloch-svg__equator {
+  fill: none;
+}
+
+.bloch-svg__wire {
+  stroke: var(--color-sphere-wire);
+}
+
+.bloch-svg__equator {
+  stroke: var(--color-sphere-equator);
+}
+
+/* Back half of the sphere: faint and dashed, so front and back read apart without rotating. */
+.bloch-svg__wire[data-back='true'],
+.bloch-svg__equator[data-back='true'] {
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+}
+
+.bloch-svg__vector {
+  stroke: var(--color-bloch-vector);
+}
+
+.bloch-svg__vector-fill {
+  fill: var(--color-bloch-vector);
+}
+
+.bloch-svg__label {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  user-select: none;
+}
+
+.bloch-svg__zero {
+  fill: var(--color-text);
+}
+
+.bloch-card__fallback-note {
+  margin: 0;
+  padding: 0 var(--sp-2) var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
