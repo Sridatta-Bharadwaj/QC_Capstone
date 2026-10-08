@@ -10,6 +10,9 @@ export type {
   PartialTraceResult,
   QubitAnalysis,
   StateVector,
+  StepResult,
+  SubsetTraceEntry,
+  SubsetTraceResult,
   TraceEntry,
   TraceTerm,
 } from './types'
@@ -19,10 +22,13 @@ export { ENTANGLEMENT_EPSILON } from './types'
 
 /**
  * simulate(circuit) → statevector.
- * Starts in |0…0⟩ and applies each gate in increasing column order.
+ * Starts in the product state given by `circuit.initialStates` (|0…0⟩ by default)
+ * and applies each gate in increasing column order.
  * Ordering convention: see `StateVector` in ./types (qubit 0 = most significant bit).
+ *
+ * productState(initialStates) → that start state.
  */
-export { simulate } from './simulator'
+export { simulate, productState } from './simulator'
 
 /**
  * densityMatrix(state) → ρ = |ψ⟩⟨ψ| (2ⁿ×2ⁿ). O(4ⁿ); teaching views only.
@@ -42,5 +48,19 @@ export { densityMatrix, reducedDensityMatrix, partialTraceExplicit } from './par
  * analyze(circuit) → statevector + per-qubit ρ, Bloch vector, |r|, purity, entangled flag.
  */
 export { analyze, blochVector, purity } from './bloch'
+
+/**
+ * simulateSteps(circuit) → StepResult[] (V2-5): per-qubit analysis after each column.
+ * steps[0] = start state, steps[c + 1] = after column c, last = analyze(circuit).
+ */
+export { simulateSteps } from './bloch'
+
+/**
+ * Keep-any-subset partial trace (V2-7):
+ * reducedDensityMatrixSubset(state, keep) → 2^k × 2^k ρ of the kept qubits.
+ * vonNeumannEntropy(ρ) → S(ρ) in bits.
+ * partialTraceSubset(state, keep, explicit) → reduced ρ + purity + entropy (+ textbook steps).
+ */
+export { partialTraceSubset, reducedDensityMatrixSubset, vonNeumannEntropy } from './subset'
 
 export { complex } from './complex'

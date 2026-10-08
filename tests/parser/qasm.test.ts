@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { circuitsEqual, parseQasm, suggestGateName } from '../../src/parser/qasm'
 import type { Circuit, Problem } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 const HEADER = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[3];\n'
 
@@ -77,7 +78,7 @@ describe('parseQasm: gates', () => {
   })
 
   it('an empty register body is a valid circuit', () => {
-    expect(ok('')).toEqual({ numQubits: 3, operations: [] })
+    expect(ok('')).toEqual({ numQubits: 3, initialStates: defaultInitialStates(3), operations: [] })
   })
 })
 
@@ -385,6 +386,7 @@ describe('helpers', () => {
     const a = ok('h q[0];\nh q[1];')
     const b: Circuit = {
       numQubits: 3,
+      initialStates: defaultInitialStates(3),
       operations: [...a.operations].reverse().map((o, i) => ({ ...o, id: `x${i}` })),
     }
     expect(circuitsEqual(a, b)).toBe(true)

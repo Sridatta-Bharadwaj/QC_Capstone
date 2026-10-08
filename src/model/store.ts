@@ -6,6 +6,7 @@ import {
   isPlacementFree,
   isValidQubitCount,
   newOperationId,
+  resizeInitialStates,
   validateOperation,
 } from './circuit'
 import { findPreset } from './presets'
@@ -14,6 +15,7 @@ import {
   MAX_QUBITS,
   type ChangeSource,
   type Circuit,
+  type InitialState,
   type Operation,
   type Problem,
 } from './types'
@@ -46,7 +48,9 @@ export interface CircuitState {
   addQubit: () => void
   /** Removes the bottom wire and any gate touching it (no-op at 1 qubit). */
   removeQubit: () => void
-  /** Removes all gates, keeps the qubit count. */
+  /** Sets the start state of one wire (V2-2). No-op for an out-of-range qubit. */
+  setInitialState: (qubit: number, state: InitialState, source?: ChangeSource) => void
+  /** Removes all gates, keeps the qubit count and initial states. */
   clear: () => void
   loadPreset: (presetId: string) => void
   selectQubit: (qubit: number | null) => void
@@ -110,7 +114,15 @@ export const useCircuitStore = create<CircuitState>((set, get) => ({
     set((s) => {
       const n = s.circuit.numQubits + 1
       if (n > MAX_QUBITS) return {}
-      return commit(s, { ...s.circuit, numQubits: n }, 'canvas')
+      return commit(
+        s,
+        {
+          ...s.circuit,
+          numQubits: n,
+          initialStates: resizeInitialStates(s.circuit.initialStates, n),
+        },
+        'canvas',
+      )
     }),
 
   removeQubit: () =>
@@ -118,7 +130,16 @@ export const useCircuitStore = create<CircuitState>((set, get) => ({
       const n = s.circuit.numQubits - 1
       if (!isValidQubitCount(n)) return {}
       const operations = s.circuit.operations.filter((o) => o.qubits.every((q) => q < n))
-      return commit(s, { numQubits: n, operations }, 'canvas')
+      const initialStates = resizeInitialStates(s.circuit.initialStates, n)
+      return commit(s, { numQubits: n, initialStates, operations }, 'canvas')
+    }),
+
+  setInitialState: (qubit, state, source = 'canvas') =>
+    set((s) => {
+      if (!Number.isInteger(qubit) || qubit < 0 || qubit >= s.circuit.numQubits) return {}
+      if (s.circuit.initialStates[qubit] === state) return {}
+      const initialStates = s.circuit.initialStates.map((v, q) => (q === qubit ? state : v))
+      return commit(s, { ...s.circuit, initialStates }, source)
     }),
 
   clear: () => set((s) => commit(s, { ...s.circuit, operations: [] }, 'canvas')),
@@ -129,6 +150,7 @@ export const useCircuitStore = create<CircuitState>((set, get) => ({
     // Fresh ids so later edits never collide with the preset's static ids.
     const circuit: Circuit = {
       numQubits: preset.circuit.numQubits,
+      initialStates: [...preset.circuit.initialStates],
       operations: preset.circuit.operations.map((o) => ({ ...o, id: newOperationId() })),
     }
     set((s) => commit(s, circuit, 'preset'))

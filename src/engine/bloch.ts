@@ -24,8 +24,15 @@ import type { Circuit } from '../model/types'
 import { ENTANGLEMENT_EPSILON } from './types'
 import { abs2 } from './complex'
 import { reducedDensityMatrix } from './partialTrace'
-import { simulate } from './simulator'
-import type { BlochVector, CircuitAnalysis, ComplexMatrix, QubitAnalysis } from './types'
+import { simulate, simulateColumns } from './simulator'
+import type {
+  BlochVector,
+  CircuitAnalysis,
+  ComplexMatrix,
+  QubitAnalysis,
+  StateVector,
+  StepResult,
+} from './types'
 
 /** r = (Tr(ρX), Tr(ρY), Tr(ρZ)) for a 2×2 density matrix. */
 export function blochVector(rho: ComplexMatrix): BlochVector {
@@ -53,8 +60,24 @@ export function blochLength(r: BlochVector): number {
 
 /** Run the circuit and describe every qubit on its own (direct method, O(n·2ⁿ)). */
 export function analyze(circuit: Circuit): CircuitAnalysis {
-  const state = simulate(circuit)
-  const n = circuit.numQubits
+  return analyzeState(simulate(circuit), circuit.numQubits)
+}
+
+/**
+ * Per-qubit analysis after every column (step-through debugger, V2-5).
+ * steps[0] = start state, steps[c + 1] = after column c; the last step equals analyze(circuit).
+ * Cheap at n ≤ 6: (columns + 1) × O(n·2ⁿ).
+ */
+export function simulateSteps(circuit: Circuit): StepResult[] {
+  return simulateColumns(circuit).map((state, step) => ({
+    step,
+    afterColumn: step - 1,
+    ...analyzeState(state, circuit.numQubits),
+  }))
+}
+
+/** Describe every qubit of an n-qubit statevector on its own (direct method). */
+export function analyzeState(state: StateVector, n: number): CircuitAnalysis {
   const qubits: QubitAnalysis[] = []
   for (let k = 0; k < n; k++) {
     const rho = reducedDensityMatrix(state, n, k)

@@ -3,6 +3,7 @@ import { analyze, partialTraceExplicit } from '../../src/engine'
 import { findPreset } from '../../src/model/presets'
 import { useCircuitStore, useResultsStore } from '../../src/model/store'
 import type { Circuit } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 export function presetCircuit(id: string): Circuit {
   const preset = findPreset(id)
@@ -23,6 +24,7 @@ export function seed(circuit: Circuit, selected: number | null): void {
 export function ghz(n: number): Circuit {
   return {
     numQubits: n,
+    initialStates: defaultInitialStates(n),
     operations: [
       { id: 'h', gate: 'H', column: 0, qubits: [0] },
       ...Array.from({ length: n - 1 }, (_, i) => ({

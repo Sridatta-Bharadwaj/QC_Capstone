@@ -2,7 +2,14 @@
 // and decides when the UI should show a "computing" state.
 import type { Circuit } from '../model/types'
 import { handleRequest } from './handleRequest'
-import type { AnalyzeResult, WorkerRequest, WorkerResponse } from './protocol'
+import type {
+  AnalyzeResult,
+  StepsResult,
+  SubsetResult,
+  WorkerRequest,
+  WorkerRequestBody,
+  WorkerResponse,
+} from './protocol'
 
 /** The subset of the DOM `Worker` API the client uses (lets tests pass a fake). */
 export interface WorkerLike {
@@ -23,6 +30,11 @@ export interface EngineClientOptions {
   /** Returns a worker, or null to compute synchronously on the main thread. */
   createWorker: () => WorkerLike | null
   onResult: (result: AnalyzeResult) => void
+  /**
+   * Replies to 'steps' / 'subset' requests sent with `send` (V2-5, V2-7). A feature that needs
+   * its own stream of results creates its own EngineClient, so staleness is tracked per stream.
+   */
+  onOtherResult?: (result: StepsResult | SubsetResult) => void
   onError: (message: string) => void
   onComputingChange: (computing: boolean) => void
   computingDelayMs?: number
@@ -70,14 +82,14 @@ export class EngineClient {
 
   /** Ask for a fresh analysis. explicitQubit = qubit for the teaching views, or null. */
   request(circuit: Circuit, explicitQubit: number | null): void {
+    this.send({ type: 'analyze', circuit, explicitQubit })
+  }
+
+  /** Send any request; replies older than the latest `send` on this client are dropped. */
+  send(body: WorkerRequestBody): void {
     if (this.disposed) return
     this.latestId += 1
-    const req: WorkerRequest = {
-      type: 'analyze',
-      requestId: this.latestId,
-      circuit,
-      explicitQubit,
-    }
+    const req = { ...body, requestId: this.latestId } as WorkerRequest
     this.latestRequest = req
     this.outstanding = true
 
@@ -113,7 +125,8 @@ export class EngineClient {
     this.clearTimer()
     this.setComputing(false)
     if (res.type === 'result') this.options.onResult(res)
-    else this.options.onError(res.message)
+    else if (res.type === 'error') this.options.onError(res.message)
+    else this.options.onOtherResult?.(res)
   }
 
   /** The worker script failed (e.g. could not load): switch to the main thread. */

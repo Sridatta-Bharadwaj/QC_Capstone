@@ -9,6 +9,14 @@ export const MAX_QUBITS = 6
 /** Default qubit count for a fresh workspace. */
 export const DEFAULT_QUBITS = 2
 
+// Security limits (PLAN.md → v2 → Security rules). Every loader and parser enforces these.
+/** At most this many operations per circuit (canvas, parsers, files, URL, localStorage). */
+export const MAX_OPERATIONS = 500
+/** Uploaded files larger than this are rejected before reading. */
+export const MAX_UPLOAD_BYTES = 100 * 1024
+/** The `#c=…` part of a shareable URL may be at most this long. */
+export const MAX_URL_BYTES = 8 * 1024
+
 /** Single-qubit gates without parameters. `Sdg` = S†, `Tdg` = T†. */
 export type FixedSingleQubitGate = 'I' | 'H' | 'X' | 'Y' | 'Z' | 'S' | 'Sdg' | 'T' | 'Tdg'
 
@@ -44,19 +52,42 @@ export interface Operation {
   angle?: number
 }
 
+/**
+ * The single-qubit state a wire starts in (before any gate). The circuit starts in
+ * the product state of these, e.g. ['+', '0'] = |+⟩ ⊗ |0⟩.
+ *   '0' = |0⟩, '1' = |1⟩, '+' = (|0⟩+|1⟩)/√2, '-' = (|0⟩−|1⟩)/√2,
+ *   'i' = (|0⟩+i|1⟩)/√2, '-i' = (|0⟩−i|1⟩)/√2
+ */
+export type InitialState = '0' | '1' | '+' | '-' | 'i' | '-i'
+
+/** All initial states, in menu order. */
+export const INITIAL_STATES: readonly InitialState[] = ['0', '1', '+', '-', 'i', '-i']
+
+export const DEFAULT_INITIAL_STATE: InitialState = '0'
+
 export interface Circuit {
   /** 1..MAX_QUBITS */
   numQubits: number
-  /** Order in this array is not meaningful; `column` defines time order. */
+  /** Start state of each wire; length === numQubits. All '0' = the v1 behaviour |0…0⟩. */
+  initialStates: InitialState[]
+  /** Order in this array is not meaningful; `column` defines time order. At most MAX_OPERATIONS. */
   operations: Operation[]
 }
 
 /**
- * Who made a model change. Drives the two-way sync rules (PLAN.md → Sync rules):
- *  - 'editor'  → update canvas + math, do NOT regenerate editor text
- *  - 'canvas' / 'preset' → regenerate editor text
+ * Who made a model change. Drives the two-way sync rules (PLAN.md → v2 → V2-0 / V2-1):
+ * each code tab regenerates its text for every source except its own.
+ *  - 'qasm'    → edit in the QASM tab: QASM text kept, Qiskit tab regenerated
+ *  - 'qiskit'  → edit in the Qiskit tab: Qiskit text kept, QASM tab regenerated
+ *  - 'canvas' | 'preset' | 'file' | 'url' | 'history' | 'restore' → both tabs regenerate
+ *    ('restore' = loaded from localStorage at startup, 'history' = undo/redo,
+ *     'file' = opened file, 'url' = shareable link)
  */
-export type ChangeSource = 'canvas' | 'editor' | 'preset'
+export type ChangeSource =
+  'canvas' | 'qasm' | 'qiskit' | 'preset' | 'file' | 'url' | 'history' | 'restore'
+
+/** The two code tabs. */
+export type CodeTab = 'qasm' | 'qiskit'
 
 /** Static metadata about each gate. */
 export interface GateInfo {
@@ -97,7 +128,9 @@ export const GATE_TYPES = Object.keys(GATES) as GateType[]
 export interface Problem {
   message: string
   severity: 'error' | 'warning'
-  /** 1-based line/column in the QASM source, when known. */
+  /** Which code tab the problem came from (shown in the Problems tab; click opens that tab). */
+  tab?: CodeTab
+  /** 1-based line/column in that tab's source, when known. */
   line?: number
   column?: number
   endLine?: number

@@ -3,6 +3,7 @@ import { analyze } from '../../src/engine'
 import { handleRequest } from '../../src/worker/handleRequest'
 import type { AnalyzeRequest } from '../../src/worker/protocol'
 import { circuit, expectClose } from '../engine/helpers'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 const bell = circuit(2, ['H', 0, [0]], ['CX', 1, [0, 1]])
 
@@ -56,7 +57,9 @@ describe('handleRequest', () => {
   it('produces responses that survive structuredClone (postMessage)', () => {
     const res = handleRequest(req({ explicitQubit: 0 }))
     expect(structuredClone(res)).toEqual(res)
-    const err = handleRequest(req({ circuit: { numQubits: 0, operations: [] } }))
+    const err = handleRequest(
+      req({ circuit: { numQubits: 0, initialStates: defaultInitialStates(0), operations: [] } }),
+    )
     expect(structuredClone(err)).toEqual(err)
   })
 

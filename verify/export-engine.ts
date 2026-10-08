@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { analyze, type Complex } from '../src/engine'
-import { earliestFreeColumn } from '../src/model/circuit'
+import { defaultInitialStates, earliestFreeColumn } from '../src/model/circuit'
 import { PRESETS } from '../src/model/presets'
 import { MAX_QUBITS, type Circuit, type GateType, type Operation } from '../src/model/types'
 
@@ -29,6 +29,7 @@ type Step = [gate: GateType, column: number, qubits: number[], angle?: number]
 function build(numQubits: number, steps: Step[]): Circuit {
   return {
     numQubits,
+    initialStates: defaultInitialStates(numQubits),
     operations: steps.map(([gate, column, qubits, angle], i) => ({
       id: `v${i}`,
       gate,
@@ -317,7 +318,11 @@ function randomCases(): TestCase[] {
       ...(n >= 3 ? (['CCX'] as GateType[]) : []),
     ]
     for (let c = 0; c < RANDOM_PER_SIZE; c++) {
-      const circuit: Circuit = { numQubits: n, operations: [] }
+      const circuit: Circuit = {
+        numQubits: n,
+        initialStates: defaultInitialStates(n),
+        operations: [],
+      }
       const numGates = 1 + Math.floor(rand() * MAX_RANDOM_GATES)
       for (let g = 0; g < numGates; g++) {
         const gate = pick(allowed)

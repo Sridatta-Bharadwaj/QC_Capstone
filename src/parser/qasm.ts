@@ -18,7 +18,7 @@
 // share a column and dependent gates follow each other.
 import { QASM_GATE_NAMES } from '../codegen/qasm'
 import { parseAngle } from '../model/angle'
-import { earliestFreeColumn, newOperationId, sortedOperations } from '../model/circuit'
+import { assignOperationIds, defaultInitialStates, earliestFreeColumn } from '../model/circuit'
 import {
   GATES,
   MAX_QUBITS,
@@ -682,10 +682,7 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
 
     // Auto-placement: first column after the last gate touching this gate's span.
     const qubits = args.map((a) => a.index)
-    const column = earliestFreeColumn(
-      { numQubits: qreg?.size ?? 0, operations: asOps(ops) },
-      qubits,
-    )
+    const column = earliestFreeColumn({ operations: asOps(ops) }, qubits)
     ops.push({ gate, column, qubits, ...(angle === undefined ? {} : { angle }) })
   }
 
@@ -764,7 +761,11 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
   const qreg = state.qreg
   if (hasError || !qreg) return { circuit: null, problems }
   return {
-    circuit: { numQubits: qreg.size, operations: assignIds(ops, options.previous) },
+    circuit: {
+      numQubits: qreg.size,
+      initialStates: defaultInitialStates(qreg.size),
+      operations: assignOperationIds(ops, options.previous),
+    },
     problems,
   }
 }
@@ -775,31 +776,6 @@ function asOps(ops: ParsedOp[]): Operation[] {
 }
 
 /** Identity of a gate for id reuse: what it does, not where it sits. */
-function opKey(op: ParsedOp): string {
-  return `${op.gate}|${op.qubits.join(',')}|${op.angle ?? ''}`
-}
 
-/**
- * Gives every parsed op an id. Ops matching an op of `previous` (same gate, qubits and angle;
- * matched in time order) reuse its id, everything else gets a fresh one.
- */
-function assignIds(ops: ParsedOp[], previous: Circuit | undefined): Operation[] {
-  const pool = new Map<string, string[]>()
-  if (previous) {
-    for (const op of sortedOperations(previous)) {
-      const key = opKey(op)
-      pool.set(key, [...(pool.get(key) ?? []), op.id])
-    }
-  }
-  return ops.map((op) => ({ ...op, id: pool.get(opKey(op))?.shift() ?? newOperationId() }))
-}
-
-/** True if both circuits have the same qubits and the same gates in the same places (ids ignored). */
-export function circuitsEqual(a: Circuit, b: Circuit): boolean {
-  if (a.numQubits !== b.numQubits || a.operations.length !== b.operations.length) return false
-  const canon = (c: Circuit) =>
-    c.operations.map((op) => `${op.column}|${opKey(op)}`).sort((x, y) => (x < y ? -1 : 1))
-  const ca = canon(a)
-  const cb = canon(b)
-  return ca.every((key, i) => key === cb[i])
-}
+// Kept here for existing imports; the implementation lives with the model helpers.
+export { circuitsEqual } from '../model/circuit'

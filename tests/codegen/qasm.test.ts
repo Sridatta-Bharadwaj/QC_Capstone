@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { qasmStatement, toQasm } from '../../src/codegen'
 import { PRESETS } from '../../src/model/presets'
 import { GATE_TYPES, type Circuit, type GateType, type Operation } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 let nextId = 0
 function op(gate: GateType, column: number, qubits: number[], angle?: number): Operation {
@@ -55,12 +56,15 @@ describe('qasmStatement', () => {
 
 describe('toQasm', () => {
   it('writes header and register for an empty circuit', () => {
-    expect(toQasm({ numQubits: 2, operations: [] })).toBe(HEADER + 'qreg q[2];\n')
+    expect(toQasm({ numQubits: 2, initialStates: defaultInitialStates(2), operations: [] })).toBe(
+      HEADER + 'qreg q[2];\n',
+    )
   })
 
   it('matches the documented example', () => {
     const circuit: Circuit = {
       numQubits: 2,
+      initialStates: defaultInitialStates(2),
       operations: [op('RX', 2, [1], Math.PI / 2), op('CX', 1, [0, 1]), op('H', 0, [0])],
     }
     expect(toQasm(circuit)).toBe(HEADER + 'qreg q[2];\n\nh q[0];\ncx q[0],q[1];\nrx(pi/2) q[1];\n')
@@ -69,6 +73,7 @@ describe('toQasm', () => {
   it('orders by column, then by lowest qubit within a column', () => {
     const circuit: Circuit = {
       numQubits: 4,
+      initialStates: defaultInitialStates(4),
       operations: [
         op('X', 1, [3]),
         op('CX', 1, [2, 0]),
@@ -83,21 +88,29 @@ describe('toQasm', () => {
   })
 
   it('handles a 1-qubit circuit', () => {
-    expect(toQasm({ numQubits: 1, operations: [op('H', 0, [0])] })).toBe(
-      HEADER + 'qreg q[1];\n\nh q[0];\n',
-    )
+    expect(
+      toQasm({
+        numQubits: 1,
+        initialStates: defaultInitialStates(1),
+        operations: [op('H', 0, [0])],
+      }),
+    ).toBe(HEADER + 'qreg q[1];\n\nh q[0];\n')
   })
 
   it('handles a 6-qubit circuit', () => {
     const operations = [op('H', 0, [0]), ...[1, 2, 3, 4, 5].map((t) => op('CX', t, [t - 1, t]))]
-    expect(toQasm({ numQubits: 6, operations })).toBe(
+    expect(toQasm({ numQubits: 6, initialStates: defaultInitialStates(6), operations })).toBe(
       HEADER +
         'qreg q[6];\n\nh q[0];\ncx q[0],q[1];\ncx q[1],q[2];\ncx q[2],q[3];\ncx q[3],q[4];\ncx q[4],q[5];\n',
     )
   })
 
   it('is deterministic and does not mutate the circuit', () => {
-    const circuit: Circuit = { numQubits: 2, operations: [op('X', 1, [1]), op('H', 0, [0])] }
+    const circuit: Circuit = {
+      numQubits: 2,
+      initialStates: defaultInitialStates(2),
+      operations: [op('X', 1, [1]), op('H', 0, [0])],
+    }
     const before = JSON.stringify(circuit)
     expect(toQasm(circuit)).toBe(toQasm(structuredClone(circuit)))
     expect(JSON.stringify(circuit)).toBe(before)

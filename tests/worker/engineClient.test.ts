@@ -69,7 +69,7 @@ describe('EngineClient', () => {
     client.request(bell, 0)
     client.request(plus, null)
     expect(worker.requests.map((r) => r.requestId)).toEqual([1, 2])
-    expect(worker.requests[0].explicitQubit).toBe(0)
+    expect(worker.requests[0]).toMatchObject({ type: 'analyze', explicitQubit: 0 })
     worker.reply(1)
     expect(onResult).toHaveBeenCalledTimes(1)
     expect(onResult.mock.calls[0][0].analysis.numQubits).toBe(1)
@@ -209,7 +209,7 @@ describe('startEngineBridge', () => {
     vi.advanceTimersByTime(COMPUTING_DELAY_MS)
     expect(useResultsStore.getState().computing).toBe(true)
 
-    useCircuitStore.getState().setCircuit(invalid, 'editor')
+    useCircuitStore.getState().setCircuit(invalid, 'qasm')
     worker.reply(1)
     expect(useResultsStore.getState().computing).toBe(false)
     expect(useResultsStore.getState().error).toMatch(/.+/)

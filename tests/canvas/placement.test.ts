@@ -11,9 +11,11 @@ import {
   visibleColumnCount,
 } from '../../src/components/Canvas/placement'
 import type { Circuit } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 const circuit = (numQubits: number, operations: Circuit['operations'] = []): Circuit => ({
   numQubits,
+  initialStates: defaultInitialStates(numQubits),
   operations,
 })
 

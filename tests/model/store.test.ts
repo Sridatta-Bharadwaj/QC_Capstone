@@ -74,3 +74,27 @@ describe('presets', () => {
     }
   })
 })
+
+describe('initial states (v2 contract)', () => {
+  it('add/remove qubit keep initialStates the same length as the register', () => {
+    const s = () => useCircuitStore.getState()
+    s().setInitialState(0, '+')
+    s().addQubit()
+    expect(s().circuit.initialStates).toEqual(['+', '0', '0'])
+    s().removeQubit()
+    s().removeQubit()
+    expect(s().circuit.initialStates).toEqual(['+'])
+  })
+
+  it('setInitialState ignores out-of-range qubits', () => {
+    const before = useCircuitStore.getState().revision
+    useCircuitStore.getState().setInitialState(9, '1')
+    expect(useCircuitStore.getState().revision).toBe(before)
+  })
+
+  it('presets load with their initial states', () => {
+    useCircuitStore.getState().loadPreset(PRESETS[0].id)
+    const c = useCircuitStore.getState().circuit
+    expect(c.initialStates).toHaveLength(c.numQubits)
+  })
+})
