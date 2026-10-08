@@ -50,7 +50,10 @@ export function showNotice(message: string, options: ShowNoticeOptions = {}): nu
 
   const timeout = options.timeoutMs ?? (kind === 'info' && !options.link ? 4000 : undefined)
   if (timeout !== undefined) {
-    timers.set(notice.id, setTimeout(() => dismissNotice(notice.id), timeout))
+    timers.set(
+      notice.id,
+      setTimeout(() => dismissNotice(notice.id), timeout),
+    )
   }
   return notice.id
 }
