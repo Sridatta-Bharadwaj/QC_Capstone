@@ -5,7 +5,9 @@
 // Output: verify/out/engine_results.json (gitignored)
 //
 // For every circuit we store:
-//   - the circuit itself (same JSON shape as the app's model: numQubits + operations)
+//   - the circuit itself (same JSON shape as the app's model: numQubits, initialStates,
+//     operations). V2-2: wires may start in |1⟩ |+⟩ |−⟩ |i⟩ |−i⟩; verify.py prepares those with
+//     gates in Qiskit, while the engine starts from the product state directly.
 //   - the engine's statevector (BIG-endian: qubit 0 = most significant bit of the index)
 //   - per qubit: reduced density matrix ρₖ (direct method), Bloch vector, purity
 //   - V2-7, for several kept sets K (incl. non-contiguous ones): the subset-reduced ρ_K
@@ -17,7 +19,14 @@ import { fileURLToPath } from 'node:url'
 import { analyze, partialTraceSubset, type Complex } from '../src/engine'
 import { defaultInitialStates, earliestFreeColumn } from '../src/model/circuit'
 import { PRESETS } from '../src/model/presets'
-import { MAX_QUBITS, type Circuit, type GateType, type Operation } from '../src/model/types'
+import {
+  INITIAL_STATES,
+  MAX_QUBITS,
+  type Circuit,
+  type GateType,
+  type InitialState,
+  type Operation,
+} from '../src/model/types'
 
 interface TestCase {
   category: string
@@ -308,7 +317,10 @@ const RANDOM_PER_SIZE = 40 // × 6 sizes = 240 circuits
 const MAX_RANDOM_GATES = 24
 
 function randomCases(): TestCase[] {
-  const rand = mulberry32(RANDOM_SEED)
+  return randomCasesWith(mulberry32(RANDOM_SEED), RANDOM_PER_SIZE)
+}
+
+function randomCasesWith(rand: () => number, perSize: number): TestCase[] {
   const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rand() * xs.length)]
   const cases: TestCase[] = []
 
@@ -319,7 +331,7 @@ function randomCases(): TestCase[] {
       ...(n >= 2 ? (['CX', 'CZ', 'SWAP'] as GateType[]) : []),
       ...(n >= 3 ? (['CCX'] as GateType[]) : []),
     ]
-    for (let c = 0; c < RANDOM_PER_SIZE; c++) {
+    for (let c = 0; c < perSize; c++) {
       const circuit: Circuit = {
         numQubits: n,
         initialStates: defaultInitialStates(n),
@@ -360,6 +372,61 @@ function randomCases(): TestCase[] {
 }
 
 // ---------------------------------------------------------------------------
+// V2-2: initial states. Fixed checks, then random circuits with random start states.
+// (A separate seed, so the v1 random circuits above stay exactly the same.)
+// ---------------------------------------------------------------------------
+const INITIAL_STATES_SEED = 20261009
+const INITIAL_STATES_PER_SIZE = 20 // × 6 sizes = 120 circuits
+
+function initialStateCases(): TestCase[] {
+  const cases: TestCase[] = []
+  const withStates = (circuit: Circuit, initialStates: InitialState[]): Circuit => ({
+    ...circuit,
+    initialStates,
+  })
+  // Each start state alone, then through H, and as the control of a CX.
+  for (const s of INITIAL_STATES) {
+    cases.push({
+      category: 'initial states',
+      name: `|${s}>`,
+      circuit: withStates(build(1, []), [s]),
+    })
+    cases.push({
+      category: 'initial states',
+      name: `H|${s}>`,
+      circuit: withStates(build(1, [['H', 0, [0]]]), [s]),
+    })
+    cases.push({
+      category: 'initial states',
+      name: `CX from |${s}>|-i>`,
+      circuit: withStates(build(2, [['CX', 0, [0, 1]]]), [s, '-i']),
+    })
+  }
+  // All six on six wires at once (checks the qubit order of the product state).
+  cases.push({
+    category: 'initial states',
+    name: '|0 1 + - i -i>',
+    circuit: withStates(build(6, []), [...INITIAL_STATES]),
+  })
+
+  // Random circuits (same generator as above) with random start states.
+  const rand = mulberry32(INITIAL_STATES_SEED)
+  const base = randomCasesWith(rand, INITIAL_STATES_PER_SIZE)
+  for (const c of base) {
+    const states = Array.from(
+      { length: c.circuit.numQubits },
+      () => INITIAL_STATES[Math.floor(rand() * INITIAL_STATES.length)],
+    )
+    cases.push({
+      category: `init+random n=${c.circuit.numQubits}`,
+      name: `init-${c.name}`,
+      circuit: withStates(c.circuit, states),
+    })
+  }
+  return cases
+}
+
+// ---------------------------------------------------------------------------
 // Run the engine and write the JSON.
 // ---------------------------------------------------------------------------
 const pair = (z: Complex): [number, number] => [z.re, z.im]
@@ -389,7 +456,7 @@ function keepSets(n: number): number[][] {
   ]
 }
 
-const cases = [...fixedCases(), ...randomCases()]
+const cases = [...fixedCases(), ...randomCases(), ...initialStateCases()]
 const results = cases.map(({ category, name, circuit }) => {
   const analysis = analyze(circuit)
   return {

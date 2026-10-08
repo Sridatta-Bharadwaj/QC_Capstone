@@ -73,11 +73,39 @@ def sorted_operations(ops: list[dict]) -> list[dict]:
     return sorted(ops, key=lambda op: (op["column"], min(op["qubits"])))
 
 
+# V2-2: a wire's start state, prepared from |0> with gates (applied left to right):
+#   |1> = X|0>,  |+> = H|0>,  |-> = H X|0>,  |i> = S H|0>,  |-i> = Sdg H|0>.
+# The engine does NOT use gates for this: it builds the product state directly.
+# So this also checks that those sequences give exactly the engine's start vectors.
+PREP_GATES = {
+    "0": [],
+    "1": ["x"],
+    "+": ["h"],
+    "-": ["x", "h"],
+    "i": ["h", "s"],
+    "-i": ["h", "sdg"],
+}
+
+# Qiskit's own labels for the same six states (Statevector.from_label): r = |+i>, l = |-i>.
+QISKIT_LABELS = {"0": "0", "1": "1", "+": "+", "-": "-", "i": "r", "-i": "l"}
+
+
+def add_preparation(qc: QuantumCircuit, initial_states: list[str]) -> None:
+    """Prepare each wire's start state with gates. Qubit labels are the same in both
+    programs (q_k is q_k), so no endianness fix is needed here: only the statevector
+    INDEX order differs, and to_big_endian handles that."""
+    for qubit, state in enumerate(initial_states):
+        for name in PREP_GATES[state]:
+            getattr(qc, name)(qubit)
+
+
 def build_qiskit_circuit(circuit: dict) -> QuantumCircuit:
     """Same gates, same qubit labels, same order. The qubit list order inside an
     operation matches Qiskit's argument order: CX [control, target],
-    CCX [control1, control2, target], SWAP [a, b]."""
+    CCX [control1, control2, target], SWAP [a, b]. Start states (V2-2) are
+    prepared with gates first; v1 data without `initialStates` means all |0>."""
     qc = QuantumCircuit(circuit["numQubits"])
+    add_preparation(qc, circuit.get("initialStates") or ["0"] * circuit["numQubits"])
     for op in sorted_operations(circuit["operations"]):
         gate, q = op["gate"], op["qubits"]
         match gate:
@@ -171,6 +199,23 @@ def endianness_self_test() -> None:
     qc3.x(0)
     rho = qiskit_subset_rho(Statevector(qc3), [0, 2])
     assert abs(rho[0b10, 0b10] - 1) < 1e-12, "kept set must be read big-endian after the fix"
+
+
+def preparation_self_test() -> None:
+    """The prep-gate sequences give Qiskit's own labelled states, exactly (no phase).
+
+    from_label reads its string little-endian (the LAST character is q0), so the
+    label for the start states [s0, s1, ...] is the reversed list."""
+    for state in PREP_GATES:
+        qc = QuantumCircuit(1)
+        add_preparation(qc, [state])
+        expected = Statevector.from_label(QISKIT_LABELS[state]).data
+        assert np.allclose(Statevector(qc).data, expected, atol=1e-12), state
+    states = ["0", "1", "+", "-", "i", "-i"]
+    qc = QuantumCircuit(len(states))
+    add_preparation(qc, states)
+    label = "".join(QISKIT_LABELS[s] for s in reversed(states))
+    assert np.allclose(Statevector(qc).data, Statevector.from_label(label).data, atol=1e-12)
 
 
 # ---------------------------------------------------------------------------
@@ -282,6 +327,7 @@ def main() -> int:
         return 2
     data = json.loads(RESULTS.read_text(encoding="utf-8"))
     endianness_self_test()
+    preparation_self_test()
 
     # category -> aggregated stats, in first-seen order
     stats: dict[str, dict] = {}

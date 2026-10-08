@@ -20,6 +20,15 @@ layouts, and 240 seeded random circuits on 1–6 qubits), the engine and
    and its von Neumann entropy. Engine: `partialTraceSubset` (direct method,
    Jacobi eigenvalues for the entropy). Qiskit: `partial_trace(state, [the rest])`
    and `entropy(ρ_K, base=2)`.
+5. **Initial states (V2-2).** 139 circuits whose wires start in |0⟩ |1⟩ |+⟩ |−⟩ |i⟩
+   |−i⟩ (19 fixed cases + 120 seeded random circuits with random start states). The
+   engine builds the product start state directly; `verify.py` prepares it in Qiskit
+   with gates before the circuit (|1⟩ = x, |+⟩ = h, |−⟩ = x then h, |i⟩ = h then s,
+   |−i⟩ = h then sdg), the same sequences the app writes in the code tabs. At start-up
+   `preparation_self_test` also checks those sequences against Qiskit's own
+   `Statevector.from_label` (`r` = |i⟩, `l` = |−i⟩), so a wrong sequence or a wrong
+   qubit order fails before any comparison. Negative control: with |−⟩ prepared as
+   h then x and |i⟩ as h then sdg, 90 circuits mismatch.
 
 Tolerance: max absolute difference ≤ 1e-9 per entry. The observed differences
 are around 1e-15, which is floating-point rounding.
@@ -74,6 +83,11 @@ uses `verify/.venv`'s Python automatically, so you do not need to activate the v
 | `requirements.txt` | Pinned `qiskit` and `numpy` versions used for the results below    |
 
 ## Endianness
+
+Start states (V2-2) need no extra conversion: `add_preparation` applies the gates
+to qubit _label_ k, which is the same qubit in both programs. Only
+`Statevector.from_label` in the self-test reads its string little-endian (the last
+character is q0), so the label is built from the reversed list of start states.
 
 Both programs call the qubits q0, q1, …, q(n−1). They disagree on **where each
 qubit's bit sits in the index of the 2ⁿ amplitudes**:
@@ -162,6 +176,24 @@ Run on 2026-10-08, same setup. Max absolute differences over all kept sets of a 
 | random n=5          |       40 |       320 |     1.33e-15 |        4.22e-15 |     1.12e-14 | PASS     |
 | random n=6          |       40 |       320 |     2.11e-15 |        4.22e-15 |     8.72e-15 | PASS     |
 | **Total**           |  **378** |  **2083** | **2.11e-15** |    **4.22e-15** | **1.12e-14** | **PASS** |
+
+### Initial states (V2-2)
+
+Run on 2026-10-08, same setup (initial-states seed 20261009). Single-qubit columns
+as in the first table; kept-set columns as in the V2-7 table.
+
+| Category        | Circuits | max \|Δρ\| | max \|Δψ\| | max \|Δr\| | Kept sets | max \|ΔS\| | Result |
+| --------------- | -------: | ---------: | ---------: | ---------: | --------: | ---------: | ------ |
+| initial states  |       19 |   8.88e-16 |   4.44e-16 |   8.88e-16 |        38 |   1.60e-15 | PASS   |
+| init+random n=1 |       20 |   1.78e-15 |   8.95e-16 |   1.67e-15 |        20 |   6.61e-15 | PASS   |
+| init+random n=2 |       20 |   1.44e-15 |   7.22e-16 |   1.44e-15 |        60 |   9.69e-15 | PASS   |
+| init+random n=3 |       20 |   1.78e-15 |   5.56e-16 |   1.78e-15 |       140 |   6.55e-15 | PASS   |
+| init+random n=4 |       20 |   1.55e-15 |   4.46e-16 |   1.55e-15 |       300 |   1.23e-14 | PASS   |
+| init+random n=5 |       20 |   2.66e-15 |   7.11e-16 |   2.55e-15 |       160 |   1.21e-14 | PASS   |
+| init+random n=6 |       20 |   2.11e-15 |   3.43e-16 |   2.22e-15 |       160 |   9.03e-15 | PASS   |
+
+With the two new presets (|−⟩ through H, phase kickback) the full run is 519 circuits
+and 2965 kept sets, all PASS (max |Δρ| 2.66e-15).
 
 Random circuits have 1–24 gates each, drawn from all 16 gate types (CCX only
 when n ≥ 3, two-qubit gates only when n ≥ 2).
