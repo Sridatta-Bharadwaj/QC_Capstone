@@ -198,10 +198,12 @@ function SingleQubitTraceSteps({ keep }: { keep: number[] }) {
 
   if (computing || analysis === null || qubit === null || explicit === null || selected === null) {
     return (
-      <div className="teaching">
+      <div className="teaching teaching--split">
         {toolbar}
-        {intro}
-        <MatrixSkeleton label="partial trace steps" size={4} />
+        <div className="teaching__scroll">
+          {intro}
+          <MatrixSkeleton label="partial trace steps" size={4} />
+        </div>
       </div>
     )
   }
@@ -211,122 +213,130 @@ function SingleQubitTraceSteps({ keep }: { keep: number[] }) {
   const diff = maxAbsDifference(explicit.reduced, qubit.rho)
   const agrees = diff <= AGREEMENT_TOLERANCE
 
+  // The toolbar stays above a separate scroll area (`teaching--split`), so the text can never
+  // slide underneath it.
   return (
-    <div className="teaching">
+    <div className="teaching teaching--split">
       {toolbar}
-      {intro}
+      <div className="teaching__scroll">
+        {intro}
 
-      <ol className="steps">
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              The state <MathText text="|ψ⟩" />
-            </h3>
-            <p>
-              The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
-              listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bit of {name} is
-              underlined.
-            </p>
-            <Amplitudes state={analysis.state} numQubits={numQubits} qubit={selected} />
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              Density matrix{' '}
-              <span className="math">
-                ρ = <MathText text="|ψ⟩⟨ψ|" />
-              </span>
-            </h3>
-            <p>
-              Each entry is{' '}
-              <span className="math">
-                ρ[i][j] = ψ<sub>i</sub> · conj(ψ<sub>j</sub>)
-              </span>
-              . For {numQubits} qubit{numQubits === 1 ? '' : 's'} ρ is {dim}×{dim} = {dim * dim}{' '}
-              entries. The diagonal holds the probabilities; the off-diagonal entries hold the
-              phases between basis states.
-            </p>
-            {numQubits > MAX_DISPLAY_QUBITS ? (
-              <p className="teaching-note" data-testid="too-large">
-                Full ρ is {dim}×{dim} — too large to display. Step 3 lists the entries that matter
-                for {name}.
+        <ol className="steps">
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                The state <MathText text="|ψ⟩" />
+              </h3>
+              <p>
+                The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
+                listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bit of {name} is
+                underlined.
               </p>
-            ) : (
+              <Amplitudes state={analysis.state} numQubits={numQubits} qubit={selected} />
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                Density matrix{' '}
+                <span className="math">
+                  ρ = <MathText text="|ψ⟩⟨ψ|" />
+                </span>
+              </h3>
+              <p>
+                Each entry is{' '}
+                <span className="math">
+                  ρ[i][j] = ψ<sub>i</sub> · conj(ψ<sub>j</sub>)
+                </span>
+                . For {numQubits} qubit{numQubits === 1 ? '' : 's'} ρ is {dim}×{dim} = {dim * dim}{' '}
+                entries. The diagonal holds the probabilities; the off-diagonal entries hold the
+                phases between basis states.
+              </p>
+              {numQubits > MAX_DISPLAY_QUBITS ? (
+                <p className="teaching-note" data-testid="too-large">
+                  Full ρ is {dim}×{dim} — too large to display. Step 3 lists the entries that matter
+                  for {name}.
+                </p>
+              ) : (
+                <div className="matrix-scroll">
+                  <MatrixTable
+                    matrix={explicit.fullRho}
+                    numQubits={numQubits}
+                    label="Full density matrix"
+                    testId="full-rho"
+                    highlightQubit={selected}
+                    compact
+                  />
+                </div>
+              )}
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>Trace out every qubit except {name}</h3>
+              {others === null ? (
+                <p>
+                  There are no other qubits, so <Rho qubit={selected} /> is ρ itself.
+                </p>
+              ) : (
+                <p>
+                  For each entry{' '}
+                  <span className="math">
+                    <Rho qubit={selected} />
+                    [a][b]
+                  </span>
+                  , add up the entries of ρ whose row has {name} = a, whose column has {name} = b,
+                  and where {others} {numQubits === 2 ? 'has' : 'have'} the same value in row and
+                  column (shown as <span className="math">·</span>). That is 2
+                  <sup>{numQubits - 1}</sup> = {termsPerEntry} terms per entry. Terms that are 0 are
+                  hidden.
+                </p>
+              )}
+              <div className="trace-entries">
+                {explicit.entries.map((entry) => (
+                  <TraceEntryCard
+                    key={`${selected}-${entry.a}${entry.b}`}
+                    entry={entry}
+                    numQubits={numQubits}
+                    qubit={selected}
+                  />
+                ))}
+              </div>
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                Result: reduced density matrix <Rho qubit={selected} />
+              </h3>
               <div className="matrix-scroll">
                 <MatrixTable
-                  matrix={explicit.fullRho}
-                  numQubits={numQubits}
-                  label="Full density matrix"
-                  testId="full-rho"
-                  highlightQubit={selected}
-                  compact
+                  matrix={explicit.reduced}
+                  numQubits={1}
+                  label={`Reduced density matrix of ${name} (explicit method)`}
+                  testId="explicit-reduced"
                 />
               </div>
-            )}
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>Trace out every qubit except {name}</h3>
-            {others === null ? (
-              <p>
-                There are no other qubits, so <Rho qubit={selected} /> is ρ itself.
-              </p>
-            ) : (
-              <p>
-                For each entry{' '}
-                <span className="math">
-                  <Rho qubit={selected} />
-                  [a][b]
-                </span>
-                , add up the entries of ρ whose row has {name} = a, whose column has {name} = b, and
-                where {others} {numQubits === 2 ? 'has' : 'have'} the same value in row and column
-                (shown as <span className="math">·</span>). That is 2<sup>{numQubits - 1}</sup> ={' '}
-                {termsPerEntry} terms per entry. Terms that are 0 are hidden.
-              </p>
-            )}
-            <div className="trace-entries">
-              {explicit.entries.map((entry) => (
-                <TraceEntryCard
-                  key={`${selected}-${entry.a}${entry.b}`}
-                  entry={entry}
-                  numQubits={numQubits}
-                  qubit={selected}
+              <p
+                className={`check-line${agrees ? '' : ' check-line--bad'}`}
+                data-testid="check-line"
+              >
+                <span
+                  className={`codicon ${agrees ? 'codicon-pass' : 'codicon-error'}`}
+                  aria-hidden="true"
                 />
-              ))}
+                {agrees
+                  ? 'Direct method (O(2ⁿ), used for the spheres) gives the same matrix'
+                  : 'Direct method (O(2ⁿ), used for the spheres) gives a DIFFERENT matrix'}
+                : max difference {formatScientific(diff)}
+              </p>
             </div>
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              Result: reduced density matrix <Rho qubit={selected} />
-            </h3>
-            <div className="matrix-scroll">
-              <MatrixTable
-                matrix={explicit.reduced}
-                numQubits={1}
-                label={`Reduced density matrix of ${name} (explicit method)`}
-                testId="explicit-reduced"
-              />
-            </div>
-            <p className={`check-line${agrees ? '' : ' check-line--bad'}`} data-testid="check-line">
-              <span
-                className={`codicon ${agrees ? 'codicon-pass' : 'codicon-error'}`}
-                aria-hidden="true"
-              />
-              {agrees
-                ? 'Direct method (O(2ⁿ), used for the spheres) gives the same matrix'
-                : 'Direct method (O(2ⁿ), used for the spheres) gives a DIFFERENT matrix'}
-              : max difference {formatScientific(diff)}
-            </p>
-          </div>
-        </li>
-      </ol>
+          </li>
+        </ol>
+      </div>
     </div>
   )
 }

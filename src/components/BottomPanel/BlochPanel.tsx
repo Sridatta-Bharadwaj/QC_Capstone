@@ -18,15 +18,18 @@ import { useCircuitStore, useResultsStore } from '../../model/store'
 import { Skeleton, SkeletonGroup } from '../common/Skeleton'
 import '../Bloch/Bloch.css'
 
-function BlochCardSkeleton({ sphere }: { sphere: number }) {
+/** Same footprint as a real card: the bars sit where the numbers go (below or beside). */
+function BlochCardSkeleton({ layout }: { layout: BlochLayout }) {
   return (
-    <div className="bloch-card bloch-card--skeleton">
+    <div className={`bloch-card bloch-card--skeleton bloch-card--skeleton-${layout.stats}`}>
       <Skeleton width={40} height={10} style={{ alignSelf: 'flex-start' }} />
-      <Skeleton circle width={sphere - 16} />
-      <div className="skeleton-bars">
-        <Skeleton width="90%" height={10} />
-        <Skeleton width="50%" height={10} />
-        <Skeleton width="60%" height={10} />
+      <div className="skeleton-body">
+        <Skeleton circle width={layout.sphere - 16} />
+        <div className="skeleton-bars">
+          <Skeleton width="90%" height={10} />
+          <Skeleton width="50%" height={10} />
+          <Skeleton width="60%" height={10} />
+        </div>
       </div>
     </div>
   )
@@ -37,7 +40,7 @@ function BlochSkeletonGrid({ numQubits, layout }: { numQubits: number; layout: B
     <SkeletonGroup label="Bloch spheres">
       <div className="bloch-grid" style={cardWidthStyle(layout)}>
         {Array.from({ length: numQubits }, (_, i) => (
-          <BlochCardSkeleton key={i} sphere={layout.sphere} />
+          <BlochCardSkeleton key={i} layout={layout} />
         ))}
       </div>
     </SkeletonGroup>
