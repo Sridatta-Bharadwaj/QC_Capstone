@@ -11,10 +11,14 @@
 //   h q[0];
 //   cx q[0],q[1];
 //
+// Wires that start somewhere other than |0⟩ get a marked block of preparation gates right
+// after the register (see prep.ts); with all wires in |0⟩ there is no block.
+//
 // No `creg` / `measure`: measurement is not part of v1.
 import { formatAngle } from '../model/angle'
 import { sortedOperations } from '../model/circuit'
 import type { Circuit, GateType, Operation } from '../model/types'
+import { PREP_BLOCK_BEGIN, PREP_BLOCK_END, prepGates } from './prep'
 
 /** OpenQASM 2.0 (qelib1.inc) name of each gate. Qubit order matches `Operation.qubits`. */
 export const QASM_GATE_NAMES: Record<GateType, string> = {
@@ -47,6 +51,12 @@ export function qasmStatement(op: Operation): string {
 /** The whole circuit as an OpenQASM 2.0 program (ends with a newline). */
 export function toQasm(circuit: Circuit): string {
   const lines = ['OPENQASM 2.0;', 'include "qelib1.inc";', '', `qreg q[${circuit.numQubits}];`]
+  const prep = prepGates(circuit.initialStates)
+  if (prep.length > 0) {
+    lines.push('', `// ${PREP_BLOCK_BEGIN}`)
+    for (const { gate, qubit } of prep) lines.push(`${QASM_GATE_NAMES[gate]} q[${qubit}];`)
+    lines.push(`// ${PREP_BLOCK_END}`)
+  }
   const ops = sortedOperations(circuit)
   if (ops.length > 0) {
     lines.push('')

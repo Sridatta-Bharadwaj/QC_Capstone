@@ -3,9 +3,12 @@
 // The script rebuilds the circuit with QuantumCircuit, then computes the same thing the app
 // shows: each qubit's reduced density matrix, obtained by tracing out every other qubit.
 // Output is deterministic (same circuit → identical text).
+// Wires that start somewhere other than |0⟩ get a marked block of preparation gates right
+// after QuantumCircuit(n) (see prep.ts); with all wires in |0⟩ there is no block.
 import { formatAngle } from '../model/angle'
 import { sortedOperations } from '../model/circuit'
 import type { Circuit, GateType, Operation } from '../model/types'
+import { PREP_BLOCK_BEGIN, PREP_BLOCK_END, prepGates } from './prep'
 
 /** QuantumCircuit method for each gate. Qubit order matches `Operation.qubits`. */
 export const QISKIT_METHODS: Record<GateType, string> = {
@@ -38,6 +41,15 @@ export function qiskitStatement(op: Operation): string {
 export function toQiskit(circuit: Circuit): string {
   const single = circuit.numQubits === 1
   const statements = sortedOperations(circuit).map(qiskitStatement)
+  const prep = prepGates(circuit.initialStates)
+  const prepBlock =
+    prep.length === 0
+      ? []
+      : [
+          `# ${PREP_BLOCK_BEGIN}`,
+          ...prep.map(({ gate, qubit }) => `qc.${QISKIT_METHODS[gate]}(${qubit})`),
+          `# ${PREP_BLOCK_END}`,
+        ]
   // Import pi only when an angle is written with it (e.g. "pi/2"): no unused import.
   const usesPi = statements.some((s) => /\bpi\b/.test(s))
   const lines = [
@@ -48,6 +60,7 @@ export function toQiskit(circuit: Circuit): string {
       : 'from qiskit.quantum_info import Statevector, partial_trace',
     '',
     `qc = QuantumCircuit(${circuit.numQubits})`,
+    ...prepBlock,
     ...statements,
     '',
   ]
