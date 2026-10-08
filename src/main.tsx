@@ -13,8 +13,10 @@ import './styles/tokens.css'
 import './styles/global.css'
 
 import App from './App'
+import { AppCrashScreen, ErrorBoundary } from './components/common/ErrorBoundary'
 import { installFileDropGuard } from './files/dropGuard'
 import { installHistoryShortcuts } from './history/shortcuts'
+import { STORAGE_KEY } from './persistence/autosave'
 import { initPersistence } from './persistence/startup'
 import { initTheme } from './theme/themeStore'
 
@@ -26,8 +28,21 @@ installHistoryShortcuts()
 // A file dropped outside the code panel is opened instead of replacing the page.
 installFileDropGuard()
 
+/** Last resort after a crash: forget the saved circuit (it may be what crashes) and reload. */
+function resetWorkspace(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Storage blocked: the reload alone still helps.
+  }
+  location.replace(location.pathname)
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    {/* A crash anywhere outside the panel boundaries shows a recovery screen, never a blank page. */}
+    <ErrorBoundary fallback={() => <AppCrashScreen onReset={resetWorkspace} />}>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

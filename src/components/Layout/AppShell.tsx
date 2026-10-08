@@ -5,6 +5,7 @@ import { useCircuitStore } from '../../model/store'
 import { BottomPanel } from '../BottomPanel/BottomPanel'
 import { CanvasView } from '../Canvas/CanvasView'
 import { CodePanel } from '../CodePanel/CodePanel'
+import { PanelBoundary } from '../common/ErrorBoundary'
 import { Sidebar } from '../Sidebar/Sidebar'
 import { StatusBar } from '../StatusBar/StatusBar'
 import { TitleBar } from '../TitleBar/TitleBar'
@@ -24,7 +25,9 @@ export function AppShell() {
       <div className="app-shell__body">
         <Group orientation="horizontal" id="layout-root">
           <Panel id="sidebar" defaultSize="16" minSize={160} className="app-shell__sidebar">
-            <Sidebar />
+            <PanelBoundary name="sidebar">
+              <Sidebar />
+            </PanelBoundary>
           </Panel>
           <Separator className="app-shell__separator app-shell__separator--v" />
           <Panel id="main" minSize="40">
@@ -38,17 +41,23 @@ export function AppShell() {
                     className="app-shell__canvas"
                     elementRef={canvasPanel}
                   >
-                    <CanvasView />
+                    <PanelBoundary name="circuit">
+                      <CanvasView />
+                    </PanelBoundary>
                   </Panel>
                   <Separator className="app-shell__separator app-shell__separator--v" />
                   <Panel id="code" defaultSize="36" minSize={220} className="app-shell__code">
-                    <CodePanel />
+                    <PanelBoundary name="code">
+                      <CodePanel />
+                    </PanelBoundary>
                   </Panel>
                 </Group>
               </Panel>
               <Separator className="app-shell__separator app-shell__separator--h" />
               <Panel id="bottom" defaultSize="45" minSize={120} className="app-shell__bottom">
-                <BottomPanel />
+                <PanelBoundary name="results">
+                  <BottomPanel />
+                </PanelBoundary>
               </Panel>
             </Group>
           </Panel>
