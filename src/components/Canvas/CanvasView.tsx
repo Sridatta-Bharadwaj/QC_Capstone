@@ -165,7 +165,7 @@ export function CanvasView() {
           {message ??
             (selectedOp
               ? null
-              : 'Drag a gate onto a wire. Click a gate to edit it; arrow keys move it, Delete removes it. [ and ] step through the circuit.')}
+              : 'Drag a gate onto a wire. Click a gate to edit it; arrow keys move it, Delete removes it.')}
         </div>
         {selectedOp && <GateInspector key={selectedOp.id} op={selectedOp} numQubits={n} />}
       </div>

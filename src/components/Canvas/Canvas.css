@@ -36,7 +36,6 @@
 .circuit {
   position: relative;
   display: flex;
-  padding-bottom: var(--sp-2);
   box-sizing: content-box;
 }
 
@@ -268,6 +267,7 @@
 .canvas__hint {
   padding: var(--sp-1) var(--sp-3);
   color: var(--color-text-muted);
+  line-height: 16px;
 }
 
 .canvas__hint:empty {
