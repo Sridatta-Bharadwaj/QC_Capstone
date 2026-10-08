@@ -144,6 +144,38 @@
   opacity: 0.35;
 }
 
+/* Step-through debugger (V2-5): later columns are dimmed, the column just applied is tinted. */
+.gate--step-future {
+  opacity: 0.3;
+}
+
+.circuit--stepping .gate {
+  transition: opacity 120ms ease-out;
+}
+
+.circuit__step-band {
+  position: absolute;
+  top: 0;
+  z-index: 0;
+  background: var(--color-bg-selected);
+  pointer-events: none;
+}
+
+.circuit__step-line {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.circuit__ruler-current {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
 .gate__line {
   position: absolute;
   left: 50%;

@@ -62,3 +62,7 @@
 .status-bar__warning {
   color: var(--color-warning);
 }
+
+.status-bar__step {
+  color: var(--color-accent);
+}

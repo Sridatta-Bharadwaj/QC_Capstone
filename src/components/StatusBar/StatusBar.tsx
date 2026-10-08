@@ -3,6 +3,8 @@
 import { useCircuitStore, useProblemsStore, useResultsStore } from '../../model/store'
 import { useUiStore } from '../../model/uiStore'
 import { MAX_QUBITS } from '../../model/types'
+import { columnCount } from '../../model/circuit'
+import { currentStep, useStepStore } from '../../model/stepStore'
 import { formatReal, qubitList } from '../Teaching/format'
 import './StatusBar.css'
 
@@ -15,6 +17,11 @@ export function StatusBar() {
   // one, not what the editor shows. Say so, and link to the Problems tab.
   const qasmHasErrors = useProblemsStore((s) => s.problems.some((p) => p.severity === 'error'))
   const setBottomTab = useUiStore((s) => s.setBottomTab)
+  // Step-through debugger (V2-5): everything here describes the state at that step.
+  const numSteps = useCircuitStore((s) => columnCount(s.circuit))
+  const stepping = useStepStore((s) => !s.live)
+  const step = useStepStore((s) => currentStep(s, numSteps))
+  const goLive = useStepStore((s) => s.goLive)
 
   const qubits = analysis?.qubits ?? []
   const entangled = qubitList(qubits.filter((q) => q.entangled).map((q) => q.qubit))
@@ -51,6 +58,19 @@ export function StatusBar() {
             </span>
           ))}
         </span>
+      )}
+
+      {stepping && (
+        <button
+          type="button"
+          className="status-bar__item status-bar__button status-bar__step"
+          data-testid="status-step"
+          title="Spheres, matrices and purity show the state at this step. Click to return to Live (final state)."
+          onClick={goLive}
+        >
+          <span className="codicon codicon-debug-pause" aria-hidden="true" />
+          Step {step}/{numSteps} · back to Live
+        </button>
       )}
 
       {qasmHasErrors && (

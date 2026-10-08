@@ -1,11 +1,14 @@
 // Circuit playground: toolbar, the circuit diagram (drop target for gates) and the
-// footer with hints and the inspector for the selected gate.
+// footer with hints and the inspector for the selected gate. The step-through timeline (V2-5)
+// sits between the diagram and the footer.
 import { useDndContext } from '@dnd-kit/core'
 import { useEffect, type KeyboardEvent } from 'react'
 import { columnCount } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
+import { currentStep, useStepStore } from '../../model/stepStore'
 import { MAX_QUBITS } from '../../model/types'
 import { MathText } from '../common/MathText'
+import { Timeline } from '../Timeline/Timeline'
 import { deleteSelected, nudgeSelected } from './actions'
 import { useCanvasStore } from './canvasStore'
 import { CircuitGrid } from './CircuitGrid'
@@ -35,6 +38,10 @@ export function CanvasView() {
   const selectOp = useCanvasStore((s) => s.selectOp)
   const hint = useCanvasStore((s) => s.hint)
   const clearHint = useCanvasStore((s) => s.clearHint)
+  const numSteps = columnCount(circuit)
+  // The step being inspected, or null while Live (then nothing is highlighted or dimmed).
+  const activeStep = useStepStore((s) => (s.live ? null : currentStep(s, numSteps)))
+  const stepBy = useStepStore((s) => s.stepBy)
 
   // Live drop preview while something is being dragged over the canvas.
   const { active, over } = useDndContext()
@@ -60,6 +67,13 @@ export function CanvasView() {
   function handleKeyDown(e: KeyboardEvent<HTMLElement>) {
     // Never steal keys from the inspector's inputs and selects.
     const target = e.target as HTMLElement
+    // [ and ] step through the circuit (also while the timeline slider has focus).
+    if ((e.key === '[' || e.key === ']') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (target.closest('input:not([type="range"]), select, textarea')) return
+      e.preventDefault()
+      stepBy(e.key === '[' ? -1 : 1, numSteps)
+      return
+    }
     if (target.closest('input, select, textarea')) return
     if (!selectedOp) return
     if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -123,7 +137,8 @@ export function CanvasView() {
       <div className="canvas__scroll">
         <CircuitGrid
           circuit={circuit}
-          columns={visibleColumnCount(columnCount(circuit))}
+          columns={visibleColumnCount(numSteps)}
+          activeStep={activeStep}
           selectedOpId={selectedOpId}
           selectedQubit={selectedQubit}
           draggingOpId={draggingOpId}
@@ -139,6 +154,8 @@ export function CanvasView() {
         )}
       </div>
 
+      <Timeline />
+
       <div className="canvas__footer">
         <div
           className={`canvas__hint${message ? ' canvas__hint--warn' : ''}`}
@@ -148,7 +165,7 @@ export function CanvasView() {
           {message ??
             (selectedOp
               ? null
-              : 'Drag a gate onto a wire. Click a gate to edit it; arrow keys move it, Delete removes it.')}
+              : 'Drag a gate onto a wire. Click a gate to edit it; arrow keys move it, Delete removes it. [ and ] step through the circuit.')}
         </div>
         {selectedOp && <GateInspector key={selectedOp.id} op={selectedOp} numQubits={n} />}
       </div>
