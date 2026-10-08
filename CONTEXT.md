@@ -26,6 +26,8 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 - (nothing)
 
 ## Next up
+- **v2 build (V2-0 … V2-9)**, spec in PLAN.md → v2. Target: done 2026-10-08. Priority order is listed in PLAN.md
+- Then: security audit → production readiness → deployment → M10 presentation
 - M10 — presentation + scripted demo + offline backup (separate)
 - Deployment (GitHub Pages; `base: './'` already set) when the user asks
 - Rehearse the demo at the projector resolution
@@ -70,6 +72,11 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 | 2026-10-07 | Canvas edit over erroneous QASM still regenerates (PLAN rule) but shows a notice with Ctrl+Z hint; status bar flags stale results while QASM has errors | Avoid silent loss during live typing in the demo |
 | 2026-10-07 | Not done on purpose: circuit persistence across reload, confirm dialog on Remove qubit | Not in spec |
 | 2026-10-06 | Skeleton shimmer uses a subtle linear-gradient sweep | PLAN asks for a shimmer; it is a loading indicator, not a surface gradient; disabled under reduced motion |
+| 2026-10-08 | Qiskit tab becomes editable via a straight-line Qiskit subset parser (no Python runtime) | User wants both code tabs two-way; the subset maps 1:1 to the model like QASM |
+| 2026-10-08 | v2 scope confirmed: Qiskit editing, initial states, upload/download, autosave + undo + share URL, step-through, rotation sliders, subset partial trace, UI fixes | User request; deploy + audit after v2 |
+| 2026-10-08 | Final measurements are ignored with a warning (QASM + Qiskit); mid-circuit measurement is an error | Real-world files end with measurements; the spheres show the pre-measurement state |
+| 2026-10-08 | Security rules apply to all v2 code (no eval/innerHTML, validate files/URL/localStorage, size limits) | Audit and deployment follow v2 |
+| 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
 ## Open questions
 - Course deadline — not yet known
@@ -93,3 +100,4 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 - 2026-10-06 — Waves 1–2: M1–M6 built by parallel subagents in worktrees, each merged via the gate; end-to-end check (Bell preset → both spheres at centre) passes.
 - 2026-10-06 — Wave 3: M7 sync + M8 teaching views merged via gate (542 tests).
 - 2026-10-07 — M9 finished by lead after the M9 agent hit a usage limit; all branches pushed; independent review (no blockers) → `fix-review` merged (785 tests). Known limit: at 1024×768 with 6 qubits the sphere grid wraps and scrolls.
+- 2026-10-08 — Reviewed v1 (two-way QASM sync confirmed working; user was likely typing in the read-only Qiskit tab). Wrote the full v2 spec (V2-0 … V2-9) in PLAN.md.
