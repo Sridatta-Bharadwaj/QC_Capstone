@@ -1,8 +1,10 @@
 // UI-only state (which tabs are open). Kept apart from the circuit model on purpose.
 import { create } from 'zustand'
+import type { CodeTab } from './types'
+
+export type { CodeTab }
 
 export type BottomTab = 'bloch' | 'density' | 'trace' | 'problems'
-export type CodeTab = 'qasm' | 'qiskit'
 
 interface UiState {
   bottomTab: BottomTab
