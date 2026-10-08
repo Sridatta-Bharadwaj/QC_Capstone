@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-1, V2-2, V2-4, V2-5, V2-6, V2-7, V2-8 merged; V2-3 running)_
+_Last updated: 2026-10-08 — v2 build in progress (V2-0 … V2-8 all merged; V2-9 review running)_
 
 ## Current phase
 v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
@@ -30,9 +30,10 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - [x] **V2-6 — Rotation sliders + animated Bloch vectors** (2026-10-08, `v2-6-rotation-sliders`): `Canvas/{GateInspector.tsx,angleSlider.ts,Canvas.css}` (slider in π/720 ticks, Shift snaps to π/8, rAF-throttled, one history entry per drag via `runWithHistoryKey`), `Bloch/{BlochSphere.tsx,arrowAnimation.ts,coords.ts,Bloch.css}` (250 ms cubic ease-out vector tween, reduced-motion jump, r = 0 dot + label, threshold 1e-6). 1477 tests. Browser-checked after merge (slider PageUp to π/2, r = 0 marker on both qubits)
 - [x] **V2-5 — Step-through debugger** (2026-10-08, `v2-5-step-debugger`): `model/stepStore.ts` (live/step/playing; any circuit edit → Live), `components/Timeline/*` (first/prev/play/next/last, slider, Live toggle, 700 ms play), `Canvas/{CanvasView,CircuitGrid,Canvas.css}` (`[`/`]`, column band + progress line, later gates dimmed), `worker/useEngineBridge.ts` (`step` in analyze), `Teaching/useSubsetResult.ts` (`step` in subset), StatusBar "Step k/N · back to Live", `Layout/canvasFit.ts` (`CIRCUIT_PAD_BOTTOM` 0). 6 qubits fit at 1280×720 and 1024×768. 1510 tests
 - [x] **V2-2 — Initial-state picker** (2026-10-08, `v2-2-initial-states`): `Canvas/InitialStatePicker.tsx` (menu button, portalled menu, keyboard), `Canvas/{CircuitGrid,Canvas.css,CanvasView}`, `codegen/{prep,qasm,qiskit}.ts`, `parser/{prepBlock,qasm,qiskit}.ts` (marked prep blocks ↔ `initialStates`, positioned errors), presets "|−⟩ through H" and "Phase kickback", `verify/*` (start states). Verify: 519 circuits + 2965 kept sets match Qiskit. 1907 tests
+- [x] **V2-3 — Upload / download** (2026-10-08, `v2-3-upload-download`): `src/files/{openFile,download,blochPng,blochPngExport}.ts`, `CodePanel/{FileActions.tsx,CodePanel.tsx,CodePanel.css,codeSync.ts}` (`openCode(tab, text)`: file text kept, source 'file'), `parser/{qasm,qiskit,messages}.ts` (final measurements, gate defs depth 16 / 5000 expansion steps, u/u1/u2/u3/p/sx/sxdg as rotations, QASM 3 rejection, 100 KB / 500 ops / 200 problems caps, per-wire placement), `Bloch/BlochSphere.tsx` (`preserveDrawingBuffer`), fixtures `tests/fixtures/files/*`. 1998 tests, verify 519/519
 
 ## In progress
-- `v2-3-upload-download` (wave 3)
+- `v2-9-review` (fresh reviewer), then `v2-fix-review` + README / screenshots / docs/DEMO.md
 
 ## Next up
 - Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
@@ -98,6 +99,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 | 2026-10-08 | V2-6: each slider key press = one undo step (auto-repeat continues it); history keys from a module counter; out-of-range angles pin the thumb but the label shows the real value | Predictable and testable; inspector remounts per gate |
 | 2026-10-08 | V2-5: no separate 'steps' request (timeline needs no per-step data); timeline bar 24 px and circuit bottom padding removed so 6 qubits still fit | Keep the engine traffic simple; layout budget at 1280×720 |
 | 2026-10-08 | V2-2: wire label = "q0" select button + separate picker button (no nested buttons); prep gates grouped per qubit (gates on different qubits commute, so interleaving is allowed); marker = line comment exactly "initial states"/"end initial states" (case/space-insensitive) | Valid HTML; real exports interleave; unambiguous detection |
+| 2026-10-08 | V2-3: downloads generated from the model (not tab text); an opened file keeps its exact text in its tab; u-family gates mapped to rotations (exact up to global phase) instead of rejected; redefining a built-in gate = warning (built-in used) | Model is always valid; real Qiskit exports use u/p/sx; pasted qelib1.inc should not fail |
 | 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
@@ -117,7 +119,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
 - `verify/.venv` is gitignored: recreate with `python -m venv verify/.venv` + `pip install -r verify/requirements.txt` (done 2026-10-08). Worktrees share main's `node_modules` and `verify/.venv` via directory junctions.
 - Timeline: clicking First/Last disables that button and focus leaves the canvas, so `[`/`]` stop until the canvas is focused again (review item).
-- QASM parser has no MAX_OPERATIONS check yet and an O(n²) placement copy per gate → V2-3. Keep `suggestGateName`, `ParseOptions`, `ParseResult` exported from `parser/qasm.ts` (Qiskit parser imports them).
+- Keep `suggestGateName`, `ParseOptions`, `ParseResult` exported from `parser/qasm.ts` (Qiskit parser imports them).
 - Dev server inside a worktree: fonts/codicons 403 because the `node_modules` junction is outside Vite's `fs.allow`; start Vite via its API with `server.fs.allow: ['D:/Sridatta/QC_Capstone']` (config unchanged).
 - Density Matrices still uses the sticky toolbar; it can opt into `.teaching--split` like Trace Steps.
 - `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
@@ -137,3 +139,4 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - 2026-10-08 — V2-6 merged (1477 tests); its browser check deferred until a browser tool is free.
 - 2026-10-08 — Usage limit stopped V2-2/V2-5 mid-work; both resumed. V2-5 merged (1510 tests).
 - 2026-10-08 — V2-2 merged (1907 tests, verify 519 circuits); V2-3 launched.
+- 2026-10-08 — V2-3 merged (1998 tests, verify 519/519). All build milestones done; V2-9 review launched.
