@@ -1,0 +1,85 @@
+/* Error boundary fallbacks. Colours only from tokens (src/styles/tokens.css). */
+
+.error-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  height: 100%;
+  box-sizing: border-box;
+  color: var(--color-text);
+  font-size: var(--fs-md);
+}
+
+.error-panel__icon {
+  color: var(--color-warning);
+  font-size: 16px;
+}
+
+.error-panel__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.error-panel__text {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.error-panel__button {
+  font: inherit;
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--sp-3);
+  cursor: pointer;
+}
+
+.error-panel__button:hover {
+  background: var(--color-bg-hover);
+}
+
+.error-panel__button:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.error-app {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+}
+
+.error-app__box {
+  max-width: 420px;
+  padding: var(--sp-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg-panel);
+}
+
+.error-app__title {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 600;
+}
+
+.error-app__text {
+  margin: 0 0 var(--sp-4);
+  color: var(--color-text-muted);
+  line-height: var(--lh);
+}
+
+.error-app__actions {
+  display: flex;
+  gap: var(--sp-2);
+}

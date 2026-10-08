@@ -7,9 +7,12 @@ import { Suspense, lazy, type KeyboardEvent } from 'react'
 import type { QubitAnalysis } from '../../engine/types'
 import { useCircuitStore } from '../../model/store'
 import { useUiStore } from '../../model/uiStore'
+import { ErrorBoundary } from '../common/ErrorBoundary'
 import { Skeleton } from '../common/Skeleton'
+import { BlochSphereSvg } from './BlochSphereSvg'
 import { formatFixed, formatVector } from './format'
 import { DEFAULT_SPHERE, type StatsPlacement } from './layout'
+import { hasWebGL } from './webgl'
 import './Bloch.css'
 
 // three.js + react-three-fiber live in their own chunk; the circle skeleton shows while
@@ -89,9 +92,19 @@ export function BlochCard({ data, sphereSize = DEFAULT_SPHERE, stats = 'below' }
         onKeyDown={onKeyDown}
       >
         <div className="bloch-card__sphere" aria-hidden="true">
-          <Suspense fallback={<Skeleton circle width={sphereSize - 16} style={{ margin: 8 }} />}>
-            <BlochSphere vector={bloch} size={sphereSize} />
-          </Suspense>
+          {hasWebGL() ? (
+            // If the 3D sphere fails at runtime (e.g. the WebGL context cannot be created or
+            // is lost), this card falls back to the flat sphere instead of breaking the page.
+            <ErrorBoundary fallback={() => <BlochSphereSvg vector={bloch} size={sphereSize} />}>
+              <Suspense
+                fallback={<Skeleton circle width={sphereSize - 16} style={{ margin: 8 }} />}
+              >
+                <BlochSphere vector={bloch} size={sphereSize} />
+              </Suspense>
+            </ErrorBoundary>
+          ) : (
+            <BlochSphereSvg vector={bloch} size={sphereSize} />
+          )}
         </div>
 
         {stats === 'below' ? (

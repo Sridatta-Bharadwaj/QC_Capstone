@@ -1,9 +1,9 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 complete on `main` (V2-0 … V2-9 + review fixes); next: security audit_
+_Last updated: 2026-10-09 — security audit + production readiness done; next: deployment_
 
 ## Current phase
-v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its fixes (`v2-fix-review`), README, screenshots and `docs/DEMO.md`. 2012 tests; verify 519 circuits + 2965 kept sets match Qiskit; production preview makes only same-origin requests. Next: security audit → production readiness → deployment → M10 (PLAN.md → After v2).
+v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its fixes (`v2-fix-review`), README, screenshots and `docs/DEMO.md`. 2012 tests; verify 519 circuits + 2965 kept sets match Qiskit; production preview makes only same-origin requests. Security audit + production-readiness pass done (2026-10-09, `deploy-ready`). Next: deployment (docs/DEPLOY.md) → M10.
 
 ## Done
 - [x] Problem statement received (2026-10-06)
@@ -32,14 +32,13 @@ v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its f
 - [x] **V2-2 — Initial-state picker** (2026-10-08, `v2-2-initial-states`): `Canvas/InitialStatePicker.tsx` (menu button, portalled menu, keyboard), `Canvas/{CircuitGrid,Canvas.css,CanvasView}`, `codegen/{prep,qasm,qiskit}.ts`, `parser/{prepBlock,qasm,qiskit}.ts` (marked prep blocks ↔ `initialStates`, positioned errors), presets "|−⟩ through H" and "Phase kickback", `verify/*` (start states). Verify: 519 circuits + 2965 kept sets match Qiskit. 1907 tests
 - [x] **V2-3 — Upload / download** (2026-10-08, `v2-3-upload-download`): `src/files/{openFile,download,blochPng,blochPngExport}.ts`, `CodePanel/{FileActions.tsx,CodePanel.tsx,CodePanel.css,codeSync.ts}` (`openCode(tab, text)`: file text kept, source 'file'), `parser/{qasm,qiskit,messages}.ts` (final measurements, gate defs depth 16 / 5000 expansion steps, u/u1/u2/u3/p/sx/sxdg as rotations, QASM 3 rejection, 100 KB / 500 ops / 200 problems caps, per-wire placement), `Bloch/BlochSphere.tsx` (`preserveDrawingBuffer`), fixtures `tests/fixtures/files/*`. 1998 tests, verify 519/519
 - [x] **V2-9 — Review, docs** (2026-10-08, `v2-9-review`, `v2-fix-review`): independent review `docs/reviews/v2-review.md` (no blockers; 2 major, 6 minor, 12 nits) with a resolution table. Fixed R1–R13, R17: limits in canvas/store (`Canvas/actions.ts`, `model/store.ts`), invalid saved data backed up (`persistence/autosave.ts`), split refits on window resize (`Layout/canvasFit.ts`), canvas click-focus + timeline focus (`CanvasView.tsx`, `Timeline.tsx`), Qiskit "gate after the circuit is used" warning (`parser/qiskit.ts`), window drop guard (`files/dropGuard.ts`, `main.tsx`), `collapseEmptyColumns` in `validateCircuit`, step in PNG title and teaching toolbars (`files/blochPng*.ts`, `Teaching/KeepSelector.tsx`), `suggestGateName` hasOwn, capped error count, ρ glyph, no duplicate full ρ, delayed object-URL revoke. Tests `tests/review/fixReview.test.tsx`. Docs: README (v2 features, shortcuts, formats, limits, verify), `docs/screenshots/*` (7 images), `docs/DEMO.md` + `docs/demo/ghz-from-qiskit.qasm`. 2012 tests, verify 519/519
+- [x] **Security audit + production readiness** (2026-10-09, `deploy-ready`, done in the claude.ai planning chat): audit found no exploitable issues (no eval/innerHTML; validateCircuit, share-link decoder and both parsers fuzzed with hostile input: all fail fast with clear errors; `npm audit` = 2 low in Monaco's bundled DOMPurify `IN_PLACE` mode, unreachable). **Critical fix:** without WebGL the whole app was a blank page → `common/ErrorBoundary.{tsx,css}` (root `AppCrashScreen` with Reset workspace in `main.tsx`, `PanelBoundary` around sidebar/canvas/code/results in `AppShell.tsx`), `Bloch/webgl.ts` + `Bloch/BlochSphereSvg.tsx` (flat SVG sphere, same viewpoint; used when WebGL is missing or the 3D sphere throws), PNG export explains it needs WebGL. Deployment: `build/securityHeaders.ts` (CSP + headers, one source) → `<meta>` CSP injected at build, `dist/_headers` (Netlify/Cloudflare), same headers on `npm run preview`; inline theme script moved to `public/theme-init.js` (CSP forbids inline scripts); meta description, color-scheme, noscript; `.nvmrc` 24, `engines`, version 2.0.0; `docs/DEPLOY.md`. Browser-checked with and without WebGL under the CSP: 0 violations, 0 console errors, no external requests. Tests `tests/production/*`. 2029 tests, verify 519/519
 
 ## In progress
 - (nothing)
 
 ## Next up
-- **Security audit** (PLAN.md → After v2): `npm audit` (2 low: dompurify via monaco-editor, review R19), the Security rules, CSP + security headers for the chosen host, supply chain
-- **Production readiness**: error boundaries, 404/fallback, bundle size, caching, performance at 6 qubits, accessibility pass, browser support (incl. the `THREE.Clock` deprecation warning, review R18)
-- Deployment (GitHub Pages; `base: './'` already set) when the user asks
+- **Deployment**: pick the host (Cloudflare Pages or Netlify recommended; GitHub Pages works but cannot send headers), follow `docs/DEPLOY.md`, run its post-deploy checklist
 - M10 — presentation; rehearse `docs/DEMO.md` at the projector resolution and record the backup video
 
 ## Left (backlog, in order)
@@ -104,6 +103,12 @@ v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its f
 | 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
+| 2026-10-09 | Flat SVG Bloch sphere when WebGL is unavailable or the 3D sphere throws; error boundaries per panel + root | A projector/lab PC without WebGL blanked the whole app |
+| 2026-10-09 | Security headers generated from `build/securityHeaders.ts`: `<meta>` CSP in the build (any host) + `dist/_headers` (Netlify/Cloudflare) + preview server | One source of truth; local preview tests the real policy |
+| 2026-10-09 | `style-src 'unsafe-inline'` allowed; `script-src 'self'` only (theme pre-paint script moved to `public/theme-init.js`) | Monaco/React inline styles; inline scripts were the only blocker for a strict script policy |
+| 2026-10-09 | DOMPurify low advisories accepted (Monaco bundles 3.4.15; only `IN_PLACE` mode affected, unused) | Fix = Monaco downgrade; not reachable |
+| 2026-10-09 | No 404 page / SPA rewrite | Single page; all state lives in the `#c=` hash and localStorage |
+
 ## Open questions
 - Course deadline — not yet known
 
@@ -124,6 +129,8 @@ v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its f
 - Keep `suggestGateName`, `ParseOptions`, `ParseResult` exported from `parser/qasm.ts` (Qiskit parser imports them).
 - Dev server inside a worktree: fonts/codicons 403 because the `node_modules` junction is outside Vite's `fs.allow`; start Vite via its API with `server.fs.allow: ['D:/Sridatta/QC_Capstone']` (config unchanged).
 - Density Matrices still uses the sticky toolbar; it can opt into `.teaching--split` like Trace Steps.
+- Dev server has no CSP (Vite's dev mode needs inline scripts); always check CSP with `npm run build && npm run preview`.
+- Component tests that mock `BlochSphere` must call `setWebGLSupportForTests(true)` (jsdom has no WebGL, so cards would otherwise render the SVG fallback).
 - `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
 
 ## Session log
@@ -143,3 +150,4 @@ v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its f
 - 2026-10-08 — V2-2 merged (1907 tests, verify 519 circuits); V2-3 launched.
 - 2026-10-08 — V2-3 merged (1998 tests, verify 519/519). All build milestones done; V2-9 review launched.
 - 2026-10-08 — V2-9: independent review (no blockers) → `v2-fix-review` merged with README, screenshots, DEMO.md. v2 complete: 2012 tests, verify 519/519 + 2965 subsets, preview offline (same-origin only). All branches on origin.
+- 2026-10-09 — Security audit + production readiness (planning chat): fixed the no-WebGL blank page (error boundaries + SVG sphere), CSP/security headers, deploy docs. 2029 tests, verify 519/519, 0 CSP violations. Ready to deploy.

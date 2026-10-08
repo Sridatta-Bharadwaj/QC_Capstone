@@ -114,7 +114,8 @@ npm run test
 npm run build
 ```
 
-Deployment is not set up yet. The offline build must be **served** (as above, or by any static
+Deploying: see [docs/DEPLOY.md](docs/DEPLOY.md). The build is a static site with its security
+headers generated at build time. The offline build must be **served** (as above, or by any static
 web server): opening `dist/index.html` straight from disk (`file://`) does not work, because
 browsers block module scripts and Web Workers there.
 
