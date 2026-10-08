@@ -177,10 +177,7 @@ None.
   bar ("Qiskit has errors — showing last valid circuit"). Clicking a problem switches to that tab
   with the cursor on the line. After a canvas edit over the erroneous text: "Qiskit code with
   errors was replaced by a canvas edit. Press Ctrl+Z…", and Ctrl+Z in the editor restores the text.
-- **Step debugger:** First/Prev/Play/Next/Last, slider, Play from Live restarts at 0 and stops at
-      N, Pause, any edit → Live. Column highlight and later-column dimming are visible. Density
-      Matrices and Trace Steps follow the step (Bell step 1: ρ₀ = [[.5,.5],[.5,.5]], keep both shows
-      the |00⟩+|10⟩ state). Status bar shows "Step k/N · back to Live".
+- **Step debugger:** First/Prev/Play/Next/Last, slider, Play from Live restarts at step 0 and stops at the last step, Pause, any edit → Live. Column highlight and later-column dimming are visible. Density Matrices and Trace Steps follow the step (Bell step 1: ρ₀ = [[.5,.5],[.5,.5]], keep both shows the |00⟩+|10⟩ state). Status bar shows "Step k/N · back to Live".
 - **Autosave and links:** autosave survives a reload. Copy link writes `#c=…` to the clipboard,
   with a notice. Opening a link loads it and clears the hash. A `hashchange` while the app is open
   loads the link as an undoable change ("Opened the circuit from the link.").
