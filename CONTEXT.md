@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-1, V2-4, V2-7, V2-8 merged; V2-2, V2-5, V2-6 running)_
+_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-1, V2-4, V2-6, V2-7, V2-8 merged; V2-2, V2-5 running)_
 
 ## Current phase
 v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
@@ -27,9 +27,10 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - [x] **V2-8 — UI fixes** (2026-10-08, `v2-8-ui-fixes`): `Bloch/{layout.ts,BlochCard,BlochGrid,BlochSphere,Bloch.css}` (spheres up to 320 px; card layouts below/side/stack), `BottomPanel/{BlochPanel,TraceStepsPanel}.tsx`, `Teaching.css` (`.teaching--split`/`.teaching__scroll`), `Layout/{AppShell.tsx,canvasFit.ts}` (bottom 45%, top row fits the qubit count), `index.html` boot split 55%. Sizes: 1280×720 → 320 px (1–2 q), 153 px (6 q); 1024×768 6 q → 117 px, no scrolling. 922 tests
 - [x] **V2-7 — Keep-any-subset partial trace** (2026-10-08, `v2-7-subset-trace`): `engine/subset.ts` (direct + explicit subset trace, Jacobi-based von Neumann entropy, `MAX_EXPLICIT_KEEP` = 3), `Teaching/{KeepSelector,keepStore,useSubsetResult,SubsetSummary}.tsx/ts` (QubitSelector removed), `BottomPanel/{DensityMatricesPanel,TraceStepsPanel}.tsx`, `verify/{export-engine.ts,verify.py,README.md}`. Verify: 378 circuits + 2083 kept sets match Qiskit (max |Δρ| 2.1e-15, |ΔS| 1.1e-14). 956 tests
 - [x] **V2-1 — Editable Qiskit tab** (2026-10-08, `v2-1-qiskit-sync`): `src/parser/qiskit.ts` (hand-written tokenizer/parser, straight-line subset, measurement + analysis-tail rules, limits), `src/model/angle.ts` (`evaluateAngle(text, {piNames})`, length 1000 / depth 64 caps), `CodePanel/codeSync.ts` (generic per-tab sync; `qasmSync.ts` is a shim), `CodePanel/{CodePanel,ReplacedNotice,revealStore}`, `ProblemsPanel` (tab tags), `StatusBar`, `model/store.ts` (problems `byTab`, `setProblems(tab, problems)`). 1436 tests
+- [x] **V2-6 — Rotation sliders + animated Bloch vectors** (2026-10-08, `v2-6-rotation-sliders`): `Canvas/{GateInspector.tsx,angleSlider.ts,Canvas.css}` (slider in π/720 ticks, Shift snaps to π/8, rAF-throttled, one history entry per drag via `runWithHistoryKey`), `Bloch/{BlochSphere.tsx,arrowAnimation.ts,coords.ts,Bloch.css}` (250 ms cubic ease-out vector tween, reduced-motion jump, r = 0 dot + label, threshold 1e-6). 1477 tests. Visual check pending (browsers busy at merge)
 
 ## In progress
-- `v2-2-initial-states`, `v2-5-step-debugger`, `v2-6-rotation-sliders` (wave 2)
+- `v2-2-initial-states`, `v2-5-step-debugger` (wave 2)
 
 ## Next up
 - Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
@@ -92,6 +93,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 | 2026-10-08 | V2-7: Keep chips toggle membership (multi-select); k = 1 keeps the v1 data path (entropy computed from ρₖ on the main thread); explicit steps only for k ≤ 3; all-zero entry cards hidden behind "Show all entries" | Spec asks for a multi-select; avoids two data sources for one-qubit views; 64 cards at k = 3 are unreadable |
 | 2026-10-08 | V2-1 parser accepts a few real Qiskit forms beyond the spec (`qubit1/2`, `control_qubit1/2`, `measure_active`, `range(...)` in measure, `;`, `name=`) and is stricter elsewhere (any circuit call inside a block/expression unless read-only; reassigning the circuit variable; gate call on another variable) | Real exported code uses those forms; silent ignores hid errors in the browser check |
 | 2026-10-08 | Undo while a code-tab parse is pending: the pending parse is cancelled and the tab regenerated (no stale re-apply) | Checked in `codeSync.regenerate`; closes the V2-4 open check |
+| 2026-10-08 | V2-6: each slider key press = one undo step (auto-repeat continues it); history keys from a module counter; out-of-range angles pin the thumb but the label shows the real value | Predictable and testable; inspector remounts per gate |
 | 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
@@ -128,3 +130,4 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - 2026-10-08 — V2-8 merged (922 tests); wave 2 started (V2-5, V2-6).
 - 2026-10-08 — V2-7 merged (956 tests, verify incl. 2083 subsets); browser-checked GHZ keep {q0,q1}.
 - 2026-10-08 — V2-1 merged (1436 tests); V2-2 launched.
+- 2026-10-08 — V2-6 merged (1477 tests); its browser check deferred until a browser tool is free.
