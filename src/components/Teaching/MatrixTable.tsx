@@ -4,7 +4,7 @@
 import type { CSSProperties } from 'react'
 import type { ComplexMatrix } from '../../engine/types'
 import { BasisKet } from './BasisKet'
-import { cellKey, formatComplex, isZero, magnitude } from './format'
+import { cellKey, formatComplex, isZero, magnitude, type QubitHighlight } from './format'
 
 /** From this size on (16×16 = 4 qubits) cells get a smaller font and padding to fit the panel. */
 const DENSE_SIZE = 16
@@ -15,8 +15,8 @@ interface MatrixTableProps {
   numQubits: number
   /** Accessible caption, e.g. "Reduced density matrix of q1". */
   label: string
-  /** Qubit whose bit is emphasised in the labels. */
-  highlightQubit?: number | null
+  /** Qubit(s) whose bit is emphasised in the labels. */
+  highlightQubit?: QubitHighlight
   /** Cells drawn outlined, as "row,col" keys. */
   highlightCells?: ReadonlySet<string>
   /** Called with [row, col] on hover/focus, and null on leave. */

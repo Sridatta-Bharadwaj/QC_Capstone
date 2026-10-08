@@ -425,3 +425,18 @@
   font-size: 0.75em;
   line-height: 0;
 }
+
+/* V2-7: keep-any-subset views */
+.keep-selector__label {
+  margin-right: calc(-1 * var(--sp-2));
+  font-size: var(--fs-xs);
+  color: var(--color-text-muted);
+}
+
+.qubit-selector__button[aria-disabled='true'] {
+  cursor: default;
+}
+
+.subset-explain {
+  font-size: var(--fs-sm);
+}

@@ -1,11 +1,11 @@
-// A basis ket such as |0 1 0⟩ with one qubit's bit emphasised.
-import { basisParts } from './format'
+// A basis ket such as |0 1 0⟩ with the kept qubit's (or qubits') bits emphasised.
+import { basisParts, type QubitHighlight } from './format'
 
 interface BasisKetProps {
   index: number
   numQubits: number
-  /** Qubit whose bit is drawn emphasised (the qubit being kept). */
-  highlight?: number | null
+  /** Qubit(s) whose bit is drawn emphasised (the kept qubit or qubits). */
+  highlight?: QubitHighlight
 }
 
 export function BasisKet({ index, numQubits, highlight = null }: BasisKetProps) {

@@ -8,11 +8,13 @@
 //   - the circuit itself (same JSON shape as the app's model: numQubits + operations)
 //   - the engine's statevector (BIG-endian: qubit 0 = most significant bit of the index)
 //   - per qubit: reduced density matrix ρₖ (direct method), Bloch vector, purity
+//   - V2-7, for several kept sets K (incl. non-contiguous ones): the subset-reduced ρ_K
+//     (basis big-endian over K in ascending order), its purity and von Neumann entropy
 // Complex numbers are written as [re, im] pairs of plain numbers.
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analyze, type Complex } from '../src/engine'
+import { analyze, partialTraceSubset, type Complex } from '../src/engine'
 import { defaultInitialStates, earliestFreeColumn } from '../src/model/circuit'
 import { PRESETS } from '../src/model/presets'
 import { MAX_QUBITS, type Circuit, type GateType, type Operation } from '../src/model/types'
@@ -362,6 +364,31 @@ function randomCases(): TestCase[] {
 // ---------------------------------------------------------------------------
 const pair = (z: Complex): [number, number] => [z.re, z.im]
 
+/**
+ * Kept sets to check for an n-qubit circuit (V2-7). n ≤ 4: every non-empty subset.
+ * n = 5, 6: a fixed mix of contiguous and non-contiguous sets of 2 … n−1 qubits.
+ */
+function keepSets(n: number): number[][] {
+  if (n <= 4) {
+    const all: number[][] = []
+    for (let mask = 1; mask < 1 << n; mask++) {
+      all.push(Array.from({ length: n }, (_, q) => q).filter((q) => (mask >> q) & 1))
+    }
+    return all
+  }
+  const last = n - 1
+  return [
+    [0, 1],
+    [0, 2],
+    [1, 3],
+    [0, last],
+    [0, 2, 4],
+    [1, 2, 3],
+    [0, 1, 3, last],
+    Array.from({ length: n - 1 }, (_, q) => q + 1), // all but q0
+  ]
+}
+
 const cases = [...fixedCases(), ...randomCases()]
 const results = cases.map(({ category, name, circuit }) => {
   const analysis = analyze(circuit)
@@ -376,6 +403,15 @@ const results = cases.map(({ category, name, circuit }) => {
       bloch: q.bloch,
       purity: q.purity,
     })),
+    subsets: keepSets(circuit.numQubits).map((keep) => {
+      const res = partialTraceSubset(analysis.state, keep, false)
+      return {
+        keep: res.keep,
+        rho: res.reduced.map((row) => row.map(pair)),
+        purity: res.purity,
+        entropy: res.entropy,
+      }
+    }),
   }
 })
 
@@ -391,4 +427,5 @@ writeFileSync(
     circuits: results,
   }),
 )
-console.log(`Wrote ${results.length} circuits to ${outFile}`)
+const subsetCount = results.reduce((sum, r) => sum + r.subsets.length, 0)
+console.log(`Wrote ${results.length} circuits (${subsetCount} kept sets) to ${outFile}`)

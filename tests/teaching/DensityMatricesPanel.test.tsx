@@ -55,14 +55,29 @@ describe('DensityMatricesPanel', () => {
     expect(useCircuitStore.getState().selectedQubit).toBe(0)
   })
 
-  it('switches qubit from the selector', () => {
+  it('keeps more qubits from the Keep selector, and back to one', () => {
     seed(presetCircuit('bell'), 0)
     render(<DensityMatricesPanel />)
-    const q1 = screen.getByRole('button', { name: 'q1' })
-    expect(q1).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByRole('button', { name: 'q0' })).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.click(q1)
+    expect(screen.getByRole('group', { name: 'Keep qubits' })).toBeInTheDocument()
+    // The view is re-rendered on every change, so look the buttons up each time.
+    const chip = (name: string) => screen.getByRole('button', { name })
+    expect(chip('q0')).toHaveAttribute('aria-pressed', 'true')
+    expect(chip('q0')).toHaveAttribute('aria-disabled', 'true') // the only kept qubit
+    expect(chip('q1')).toHaveAttribute('aria-pressed', 'false')
+
+    // Keep q0 and q1: the whole Bell pair, a pure 4×4 ρ.
+    fireEvent.click(chip('q1'))
+    expect(screen.getByRole('heading', { name: 'Reduced density matrix — q0, q1' })).toBeVisible()
+    expect(chip('q1')).toHaveAttribute('aria-pressed', 'true')
+    expect(cellsOf('reduced-rho')).toHaveLength(16)
+    expect(screen.getByTestId('purity')).toHaveTextContent('1.000')
+    expect(screen.getByTestId('entropy')).toHaveTextContent('0.000')
+
+    // Drop q0: back to one kept qubit, which becomes the selected one (v1 view).
+    fireEvent.click(chip('q0'))
     expect(useCircuitStore.getState().selectedQubit).toBe(1)
+    expect(screen.getByRole('heading', { name: 'Reduced density matrix — q1' })).toBeVisible()
+    expect(screen.getByTestId('entropy')).toHaveTextContent('1.000')
   })
 
   it('says the full ρ is too large at n = 5 but still shows the reduced ρ', () => {
