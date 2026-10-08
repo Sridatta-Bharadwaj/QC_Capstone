@@ -7,7 +7,8 @@
     "types": ["node"],
     "skipLibCheck": true,
 
-    /* Node-only tests that read the repo's CSS/HTML files from disk (tests/design). */
+    /* Node-only tests that read the repo's CSS/HTML files from disk (tests/design) and the
+       deployment security headers (tests/production/securityHeaders.test.ts). */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -21,5 +22,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["tests/design/**/*.ts"]
+  "include": ["tests/design/**/*.ts", "tests/production/securityHeaders.test.ts", "build/**/*.ts"]
 }
