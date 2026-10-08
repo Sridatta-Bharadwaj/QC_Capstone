@@ -168,8 +168,8 @@ describe('parseQasm: header, include, registers', () => {
   })
 
   it('other version', () => {
-    const [e] = errors('OPENQASM 3.0;\nqreg q[1];')
-    expect(e.message).toBe('Only OpenQASM 2.0 is supported (found version 3.0).')
+    const [e] = errors('OPENQASM 1.0;\nqreg q[1];')
+    expect(e.message).toBe('Only OpenQASM 2.0 is supported (found version 1.0).')
     expect(e).toMatchObject({ line: 1, column: 10, endColumn: 13 })
   })
 
@@ -238,8 +238,8 @@ describe('parseQasm: gate errors with exact positions', () => {
   })
 
   it('known but unsupported qelib gate', () => {
-    expect(errors(HEADER + 'u3(0,0,0) q[0];')[0].message).toMatch(
-      /^Gate 'u3' is not supported in v1\. Supported gates: id, h, /,
+    expect(errors(HEADER + 'cy q[0],q[1];')[0].message).toMatch(
+      /^Gate 'cy' is not supported yet\. Supported gates: id, h, .*u3, p, sx, sxdg\.$/,
     )
   })
 
@@ -284,18 +284,18 @@ describe('parseQasm: gate errors with exact positions', () => {
     expect(errs[1]).toMatchObject({ line: 6 })
   })
 
-  it('measure is an error (not part of v1)', () => {
-    const [e] = errors(HEADER + 'creg c[1];\nmeasure q[0] -> c[0];')
-    expect(e.message).toContain("'measure' is not supported in v1")
-    expect(e).toMatchObject({ line: 5, column: 1, endColumn: 21 })
+  it('a final measure is a warning (more in qasmRealWorld.test.ts)', () => {
+    const { circuit, problems } = parseQasm(HEADER + 'creg c[1];\nmeasure q[0] -> c[0];')
+    expect(circuit).not.toBeNull()
+    expect(problems[1]).toMatchObject({ severity: 'warning', line: 5, column: 1, endColumn: 21 })
   })
 
-  it('reset, if and gate definitions are errors; barrier is a warning', () => {
+  it('reset, if and opaque are errors; barrier is a warning', () => {
     expect(errors(HEADER + 'reset q[0];')[0].message).toContain("'reset'")
     expect(errors(HEADER + 'creg c[1];\nif(c==1) x q[0];')[0].message).toContain("'if'")
-    const def = errors(HEADER + 'gate foo a { h a; }\nh q[0];')
+    const def = errors(HEADER + 'opaque foo a;\nh q[0];')
     expect(def).toHaveLength(1)
-    expect(def[0].message).toContain('Custom gate definitions')
+    expect(def[0].message).toContain("Opaque gate 'foo'")
     const barrier = parseQasm(HEADER + 'h q[0];\nbarrier q[0],q[1];\nh q[1];')
     expect(barrier.problems).toEqual([expect.objectContaining({ severity: 'warning', line: 5 })])
     expect(shape(barrier.circuit as Circuit)).toEqual([
