@@ -234,7 +234,7 @@ describe('canvas edit over code with errors', () => {
       useCircuitStore.getState().addOperation({ gate: 'X', column: 0, qubits: [0] }, 'canvas')
     })
 
-  beforeEach(() => act(() => useQasmText.setState({ replacedByCanvas: false })))
+  beforeEach(() => act(() => useQasmText.setState({ replacedBy: null })))
 
   it('shows a notice in the code panel and the Problems tab, cleared by the next edit', () => {
     render(
@@ -251,7 +251,7 @@ describe('canvas edit over code with errors', () => {
     expect(editor().value).toContain('x q[0];')
     expect(notice()).toHaveLength(2)
     expect(notice()[0]).toHaveTextContent(
-      'Code with errors was replaced by a canvas edit. Press Ctrl+Z in the editor to get it back.',
+      'QASM code with errors was replaced by a canvas edit. Press Ctrl+Z in the QASM editor to get it back.',
     )
 
     type(editor().value + '// edit\n')
@@ -273,7 +273,7 @@ describe('canvas edit over code with errors', () => {
     addX()
     expect(notice()).toHaveLength(0)
 
-    act(() => useQasmText.setState({ replacedByCanvas: true }))
+    act(() => useQasmText.setState({ replacedBy: 'canvas' }))
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss notice' }))
     expect(notice()).toHaveLength(0)
   })
@@ -306,7 +306,9 @@ describe('status bar while the QASM has errors', () => {
     act(() =>
       useProblemsStore
         .getState()
-        .setProblems([{ severity: 'warning', message: 'barrier ignored', line: 1, column: 1 }]),
+        .setProblems('qasm', [
+          { severity: 'warning', message: 'barrier ignored', line: 1, column: 1 },
+        ]),
     )
     expect(screen.queryByTestId('status-stale')).not.toBeInTheDocument()
   })
