@@ -1,9 +1,17 @@
 /* Problems list: one compact row per problem, like VS Code's Problems panel. */
+/* Notices (if any) on top, the scrolling list below. */
+.problems-list {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .problems {
   list-style: none;
   margin: 0;
   padding: var(--sp-1) 0;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   font-size: var(--fs-md);
 }
@@ -42,6 +50,14 @@ button.problems__item:hover {
 
 .problems__icon--warning {
   color: var(--color-warning);
+}
+
+/* Which code tab the problem came from, a small tag like "QASM" / "Qiskit". */
+.problems__tab {
+  flex: none;
+  min-width: 44px;
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
 }
 
 .problems__message {

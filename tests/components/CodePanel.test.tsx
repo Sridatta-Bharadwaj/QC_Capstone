@@ -18,7 +18,11 @@ vi.mock('../../src/components/CodePanel/CodeEditor', async () => {
   await editorLoaded
   return {
     default: (props: CodeEditorProps) => (
-      <pre data-testid="editor" data-language={props.language} data-readonly={props.readOnly}>
+      <pre
+        data-testid="editor"
+        data-language={props.language}
+        data-readonly={String(Boolean(props.readOnly))}
+      >
         {props.value}
       </pre>
     ),
@@ -50,13 +54,13 @@ describe('CodePanel', () => {
     const editor = await screen.findByTestId('editor')
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(editor).toHaveAttribute('data-language', 'qasm')
-    // QASM is editable (two-way sync, M7); Qiskit is generated and read-only.
+    // Both tabs are editable (two-way sync: QASM since M7, Qiskit since V2-1).
     expect(editor).toHaveAttribute('data-readonly', 'false')
     expect(editor.textContent).toContain('h q[0];\ncx q[0],q[1];')
 
     fireEvent.click(screen.getByRole('tab', { name: 'Qiskit' }))
     expect(screen.getByTestId('editor')).toHaveAttribute('data-language', 'python')
-    expect(screen.getByTestId('editor')).toHaveAttribute('data-readonly', 'true')
+    expect(screen.getByTestId('editor')).toHaveAttribute('data-readonly', 'false')
     expect(screen.getByTestId('editor').textContent).toContain('qc.cx(0, 1)')
 
     // Text follows the circuit model.
