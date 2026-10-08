@@ -83,6 +83,11 @@
   background: var(--color-bg-hover);
 }
 
+.bloch-card__link:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: -1px;
+}
+
 .bloch-card__body {
   display: flex;
   flex-direction: column;
@@ -130,11 +135,74 @@
   margin-left: var(--sp-2);
 }
 
+/* Five short rows (x, y, z, |r|, purity) for the 'side' and 'stack' placements (layout.ts).
+ * Key column 6ch ("purity"), values right-aligned: 112 px wide incl. padding at 12 px mono. */
+.bloch-card__stats--list {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.bloch-card__stats--list .bloch-card__row {
+  display: grid;
+  grid-template-columns: 6ch 6ch;
+  gap: var(--sp-1);
+}
+
+.bloch-card__stats--list dd {
+  margin: 0;
+  text-align: right;
+}
+
+/* Components of r: keys in the fixed axis colours, as on the sphere. */
+.bloch-card__key--x {
+  color: var(--axis-x);
+}
+
+.bloch-card__key--y {
+  color: var(--axis-y);
+}
+
+.bloch-card__key--z {
+  color: var(--axis-z);
+}
+
+/* 'side': sphere on the left (8 px in), numbers in a column on the right. */
+.bloch-card__body--side {
+  flex-direction: row;
+  align-items: center;
+}
+
+.bloch-card__body--side .bloch-card__sphere {
+  padding: var(--sp-1) 0 var(--sp-1) var(--sp-2);
+}
+
+.bloch-card__body--side .bloch-card__stats {
+  width: 112px;
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+}
+
+/* 'stack': numbers under the sphere, one per row (narrow cards). */
+.bloch-card__body--stack .bloch-card__stats {
+  padding: var(--sp-1) var(--sp-2) 6px;
+  align-self: center;
+}
+
 /* Narrow cards (many qubits on a small screen): keep every number visible.
  * Widths: "r (−0.577, −0.577, −0.577)" in 11 px mono is ~170 px, the long tag ~95 px. */
 @container (max-width: 209px) {
   .bloch-card__tag-extra {
     display: none;
+  }
+}
+
+/* Very narrow ('stack') cards: the header keeps the name, pure/mixed and a "ρ" link. */
+@container (max-width: 159px) {
+  .bloch-card__link-word {
+    display: none;
+  }
+
+  .bloch-card__header {
+    gap: var(--sp-1);
   }
 }
 
@@ -166,7 +234,8 @@
   left: 0;
   visibility: hidden; /* shown once the first frame has positioned it */
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--bloch-label-size, var(--fs-sm));
+  font-weight: 600;
   line-height: 1;
   white-space: nowrap;
   pointer-events: none;
@@ -197,10 +266,23 @@
   border-color: var(--color-border);
 }
 
+.bloch-card--skeleton .skeleton-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.bloch-card--skeleton-side .skeleton-body {
+  flex-direction: row;
+}
+
 .bloch-card--skeleton .skeleton-bars {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
+  flex: 1;
   width: 100%;
 }
 

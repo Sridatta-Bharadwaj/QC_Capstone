@@ -15,7 +15,7 @@ export function BlochGrid({ qubits, layout }: BlochGridProps) {
   return (
     <div className="bloch-grid" style={cardWidthStyle(size)}>
       {qubits.map((q) => (
-        <BlochCard key={q.qubit} data={q} sphereSize={size.sphere} />
+        <BlochCard key={q.qubit} data={q} sphereSize={size.sphere} stats={size.stats} />
       ))}
     </div>
   )
