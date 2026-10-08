@@ -301,3 +301,17 @@
   position: absolute;
   inset: 0;
 }
+
+/* "r = 0" marker beside the centre dot when the arrow is hidden (maximally mixed state).
+ * Above-right of the centre, between the +y and +z axes where no line crosses. */
+.bloch-zero-marker {
+  top: 50%;
+  left: 50%;
+  transform: translate(6px, calc(-100% - 6px));
+  padding: 1px 3px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: calc(var(--bloch-label-size, 12px) - 2px);
+  font-weight: 500;
+}

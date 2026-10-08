@@ -51,8 +51,11 @@ export const CAMERA_POSITION: Vec3 = blochToThree(
   spherical(5.2, (70 * Math.PI) / 180, (25 * Math.PI) / 180),
 )
 
-/** Below this |r| the arrow is not drawn; only a dot at the centre (maximally mixed state). */
-export const ZERO_VECTOR_THRESHOLD = 1e-3
+/**
+ * Below this |r| the arrow is not drawn; the sphere shows a dot and an "r = 0" marker at the
+ * centre instead (maximally mixed state). Engine round-off for r = 0 is ~1e-16.
+ */
+export const ZERO_VECTOR_THRESHOLD = 1e-6
 
 export function vectorLength(v: BlochVector): number {
   return Math.hypot(v.x, v.y, v.z)
