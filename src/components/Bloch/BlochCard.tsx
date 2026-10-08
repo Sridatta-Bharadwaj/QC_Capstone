@@ -9,7 +9,7 @@ import { useCircuitStore } from '../../model/store'
 import { useUiStore } from '../../model/uiStore'
 import { Skeleton } from '../common/Skeleton'
 import { formatFixed, formatVector } from './format'
-import { DEFAULT_SPHERE } from './layout'
+import { DEFAULT_SPHERE, type StatsPlacement } from './layout'
 import './Bloch.css'
 
 // three.js + react-three-fiber live in their own chunk; the circle skeleton shows while
@@ -20,10 +20,12 @@ interface BlochCardProps {
   data: QubitAnalysis
   /** Sphere canvas edge in CSS px (BlochPanel fits it to the panel height, see layout.ts). */
   sphereSize?: number
+  /** Where the numbers go: under the sphere (two rows or five short rows) or beside it. */
+  stats?: StatsPlacement
 }
 
-export function BlochCard({ data, sphereSize = DEFAULT_SPHERE }: BlochCardProps) {
-  const { qubit, bloch, length, purity, entangled } = data
+export function BlochCard({ data, sphereSize = DEFAULT_SPHERE, stats = 'below' }: BlochCardProps) {
+  const { qubit, bloch, entangled } = data
   const selected = useCircuitStore((s) => s.selectedQubit === qubit)
   const selectQubit = useCircuitStore((s) => s.selectQubit)
   const setBottomTab = useUiStore((s) => s.setBottomTab)
@@ -67,9 +69,11 @@ export function BlochCard({ data, sphereSize = DEFAULT_SPHERE }: BlochCardProps)
           type="button"
           className="bloch-card__link"
           title={`Show the reduced density matrix of ${name}`}
+          aria-label="Reduced ρ"
           onClick={showReducedRho}
         >
-          Reduced ρ
+          {/* Narrow cards drop the word and keep just "ρ" (see Bloch.css). */}
+          <span className="bloch-card__link-word">Reduced </span>ρ
         </button>
       </header>
 
@@ -80,7 +84,7 @@ export function BlochCard({ data, sphereSize = DEFAULT_SPHERE }: BlochCardProps)
         aria-pressed={selected}
         aria-label={`Select ${name}`}
         aria-describedby={statsId}
-        className="bloch-card__body"
+        className={`bloch-card__body bloch-card__body--${stats}`}
         onKeyDown={onKeyDown}
       >
         <div className="bloch-card__sphere" aria-hidden="true">
@@ -89,25 +93,63 @@ export function BlochCard({ data, sphereSize = DEFAULT_SPHERE }: BlochCardProps)
           </Suspense>
         </div>
 
-        <div id={statsId} className="bloch-card__stats">
-          <div className="bloch-card__row">
-            <span className="bloch-card__key bloch-card__key--r">r</span>
-            <span className="bloch-card__value" data-testid="bloch-vector">
-              {formatVector(bloch)}
-            </span>
-          </div>
-          <div className="bloch-card__row">
-            <span className="bloch-card__key">|r|</span>
-            <span className="bloch-card__value" data-testid="bloch-length">
-              {formatFixed(length)}
-            </span>
-            <span className="bloch-card__key">purity</span>
-            <span className="bloch-card__value" data-testid="bloch-purity">
-              {formatFixed(purity)}
-            </span>
-          </div>
-        </div>
+        {stats === 'below' ? (
+          <StatsRows id={statsId} data={data} />
+        ) : (
+          <StatsList id={statsId} data={data} />
+        )}
       </div>
     </article>
+  )
+}
+
+/** Two rows under the sphere: "r (x, y, z)", then |r| and purity. */
+function StatsRows({ id, data }: { id: string; data: QubitAnalysis }) {
+  return (
+    <div id={id} className="bloch-card__stats">
+      <div className="bloch-card__row">
+        <span className="bloch-card__key bloch-card__key--r">r</span>
+        <span className="bloch-card__value" data-testid="bloch-vector">
+          {formatVector(data.bloch)}
+        </span>
+      </div>
+      <div className="bloch-card__row">
+        <span className="bloch-card__key">|r|</span>
+        <span className="bloch-card__value" data-testid="bloch-length">
+          {formatFixed(data.length)}
+        </span>
+        <span className="bloch-card__key">purity</span>
+        <span className="bloch-card__value" data-testid="bloch-purity">
+          {formatFixed(data.purity)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Five short rows: the components of r (keys in the axis colours, like the sphere) and then
+ * |r| and purity. Used beside the sphere, or under it in narrow cards.
+ */
+function StatsList({ id, data }: { id: string; data: QubitAnalysis }) {
+  const { bloch } = data
+  const rows: [key: string, value: number, keyClass: string, testId: string][] = [
+    ['x', bloch.x, 'bloch-card__key--x', 'bloch-x'],
+    ['y', bloch.y, 'bloch-card__key--y', 'bloch-y'],
+    ['z', bloch.z, 'bloch-card__key--z', 'bloch-z'],
+    ['|r|', data.length, '', 'bloch-length'],
+    ['purity', data.purity, '', 'bloch-purity'],
+  ]
+  return (
+    <dl id={id} className="bloch-card__stats bloch-card__stats--list">
+      {rows.map(([key, value, keyClass, testId]) => (
+        <div key={key} className="bloch-card__row">
+          <dt className={`bloch-card__key ${keyClass}`}>{key}</dt>
+          <dd className="bloch-card__value" data-testid={testId}>
+            {formatFixed(value)}
+          </dd>
+        </div>
+      ))}
+    </dl>
   )
 }

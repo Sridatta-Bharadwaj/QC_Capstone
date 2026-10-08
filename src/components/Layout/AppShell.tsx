@@ -1,14 +1,23 @@
 // VS Code-style workspace: sidebar | (canvas | code) over bottom panel, plus title and status bars.
-import { Group, Panel, Separator } from 'react-resizable-panels'
+import { useRef } from 'react'
+import { Group, Panel, Separator, usePanelRef } from 'react-resizable-panels'
+import { useCircuitStore } from '../../model/store'
 import { BottomPanel } from '../BottomPanel/BottomPanel'
 import { CanvasView } from '../Canvas/CanvasView'
 import { CodePanel } from '../CodePanel/CodePanel'
 import { Sidebar } from '../Sidebar/Sidebar'
 import { StatusBar } from '../StatusBar/StatusBar'
 import { TitleBar } from '../TitleBar/TitleBar'
+import { useCanvasFit } from './canvasFit'
 import './AppShell.css'
 
 export function AppShell() {
+  // The circuit / bottom split follows the qubit count until the user drags it (canvasFit.ts).
+  const numQubits = useCircuitStore((s) => s.circuit.numQubits)
+  const topPanel = usePanelRef()
+  const canvasPanel = useRef<HTMLDivElement>(null)
+  const onMainLayoutChanged = useCanvasFit(topPanel, canvasPanel, numQubits)
+
   return (
     <div className="app-shell">
       <TitleBar />
@@ -19,10 +28,16 @@ export function AppShell() {
           </Panel>
           <Separator className="app-shell__separator app-shell__separator--v" />
           <Panel id="main" minSize="40">
-            <Group orientation="vertical" id="layout-main">
-              <Panel id="top" defaultSize="60" minSize="20">
+            <Group orientation="vertical" id="layout-main" onLayoutChanged={onMainLayoutChanged}>
+              <Panel id="top" defaultSize="55" minSize="20" panelRef={topPanel}>
                 <Group orientation="horizontal" id="layout-top">
-                  <Panel id="canvas" defaultSize="64" minSize="30" className="app-shell__canvas">
+                  <Panel
+                    id="canvas"
+                    defaultSize="64"
+                    minSize="30"
+                    className="app-shell__canvas"
+                    elementRef={canvasPanel}
+                  >
                     <CanvasView />
                   </Panel>
                   <Separator className="app-shell__separator app-shell__separator--v" />
@@ -32,7 +47,7 @@ export function AppShell() {
                 </Group>
               </Panel>
               <Separator className="app-shell__separator app-shell__separator--h" />
-              <Panel id="bottom" defaultSize="40" minSize={120} className="app-shell__bottom">
+              <Panel id="bottom" defaultSize="45" minSize={120} className="app-shell__bottom">
                 <BottomPanel />
               </Panel>
             </Group>

@@ -10,9 +10,14 @@
 //     surface); |r| < 1 means a mixed state (tip inside). r ≈ 0 is maximally mixed: just a dot.
 //
 // Colours come from CSS tokens and are re-read whenever the theme changes.
+//
+// Legibility on a projector: lines are drei <Line> (screen-space "fat" lines, so the width in
+// pixels is honoured everywhere, unlike plain WebGL lines that are always 1 px). Line widths
+// and label size grow with the sphere (`strokeScale`), so a 300 px sphere is not drawn with
+// hairlines.
 import { Line, OrbitControls } from '@react-three/drei'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type RefObject } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, type CSSProperties, type RefObject } from 'react'
 import { Quaternion, Vector3 } from 'three'
 import type { BlochVector } from '../../engine/types'
 import { useThemeStore, type Theme } from '../../theme/themeStore'
@@ -65,8 +70,23 @@ const ORIGIN: Vec3 = [0, 0, 0]
 const AXIS_LENGTH = 1.12
 const LABEL_OFFSET = 1.28
 
-const CONE_LENGTH = 0.14
-const CONE_RADIUS = 0.05
+const CONE_LENGTH = 0.2
+const CONE_RADIUS = 0.075
+/** Radius of the dot at the arrow tip (and of the centre dot when r = 0). */
+const TIP_RADIUS = 0.045
+
+/** Line widths in CSS px for a 160 px sphere; scaled by `strokeScale(size)`. */
+const WIDTH = { wire: 1, equator: 1.25, axis: 2, vector: 3.5 }
+
+/** 1 at 160 px, growing gently with the sphere edge, never thinner than at 160 px. */
+function strokeScale(size: number): number {
+  return Math.min(1.6, Math.max(1, size / 160))
+}
+
+/** Axis label size in CSS px: 12 px on small spheres up to 17 px on the largest. */
+function labelSize(size: number): number {
+  return Math.round(Math.min(17, Math.max(12, size / 18)))
+}
 const UP = new Vector3(0, 1, 0)
 
 interface AxisLabel {
@@ -82,10 +102,38 @@ const LABELS: AxisLabel[] = [
   { text: '|1⟩', at: blochToThree({ x: 0, y: 0, z: -LABEL_OFFSET }), className: 'bloch-label--z' },
 ]
 
-function Axis({ to, color }: { to: BlochVector; color: string }) {
+function Axis({ to, color, width }: { to: BlochVector; color: string; width: number }) {
   const end = blochToThree(to)
   const start = blochToThree({ x: -to.x, y: -to.y, z: -to.z })
-  return <Line points={[start, end]} color={color} lineWidth={1.25} />
+  return <Line points={[start, end]} color={color} lineWidth={width} />
+}
+
+/**
+ * Where the pole labels sit, as a fraction of the half-height of the canvas from its centre
+ * (zoom 1, measured from the default camera): the |0⟩ / |1⟩ label centres.
+ */
+const POLE_LABEL_REACH = 0.87
+
+/**
+ * Camera zoom that keeps every label `margin` px inside the canvas edge. Labels have a fixed
+ * pixel size while the sphere scales, so small spheres zoom out slightly; big ones stay at 1.
+ */
+function cameraZoom(size: number, label: number): number {
+  const margin = label * 0.6 + 2
+  return Math.min(1, (1 - (2 * margin) / size) / POLE_LABEL_REACH)
+}
+
+/** Runs inside the canvas: applies the zoom whenever it changes and redraws. */
+function CameraZoom({ zoom }: { zoom: number }) {
+  // `get` reads the live three.js state (the camera is a mutable three.js object).
+  const get = useThree((s) => s.get)
+  useEffect(() => {
+    const { camera, invalidate } = get()
+    camera.zoom = zoom
+    camera.updateProjectionMatrix()
+    invalidate()
+  }, [get, zoom])
+  return null
 }
 
 /**
@@ -109,8 +157,20 @@ function LabelProjector({ spans }: { spans: RefObject<(HTMLSpanElement | null)[]
   return null
 }
 
-/** Arrow from the origin to r: a shaft line plus a small cone whose apex is exactly at r. */
-function BlochArrow({ vector, color }: { vector: BlochVector; color: string }) {
+/**
+ * Arrow from the origin to r: a shaft line plus a cone whose apex is exactly at r.
+ * Everything is derived from `vector`, so animating the arrow only means passing an
+ * interpolated vector each frame.
+ */
+function BlochArrow({
+  vector,
+  color,
+  width,
+}: {
+  vector: BlochVector
+  color: string
+  width: number
+}) {
   const length = vectorLength(vector)
   const geometry = useMemo(() => {
     const tip = new Vector3(...blochToThree(vector))
@@ -134,7 +194,7 @@ function BlochArrow({ vector, color }: { vector: BlochVector; color: string }) {
     // Maximally mixed state: r = 0, nothing to point at.
     return (
       <mesh position={ORIGIN}>
-        <sphereGeometry args={[0.05, 16, 12]} />
+        <sphereGeometry args={[TIP_RADIUS * 1.4, 16, 12]} />
         <meshBasicMaterial color={color} />
       </mesh>
     )
@@ -143,13 +203,13 @@ function BlochArrow({ vector, color }: { vector: BlochVector; color: string }) {
   const coneRadius = CONE_RADIUS * (geometry.coneLength / CONE_LENGTH)
   return (
     <group>
-      <Line points={[ORIGIN, geometry.shaftEnd]} color={color} lineWidth={2.5} />
+      <Line points={[ORIGIN, geometry.shaftEnd]} color={color} lineWidth={width} />
       <mesh position={geometry.coneCenter} quaternion={geometry.rotation}>
         <coneGeometry args={[coneRadius, geometry.coneLength, 20]} />
         <meshBasicMaterial color={color} />
       </mesh>
       <mesh position={geometry.tip}>
-        <sphereGeometry args={[0.035, 16, 12]} />
+        <sphereGeometry args={[TIP_RADIUS, 16, 12]} />
         <meshBasicMaterial color={color} />
       </mesh>
     </group>
@@ -166,9 +226,16 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
   const theme = useThemeStore((s) => s.theme)
   const colors = useMemo(() => readSceneColors(theme), [theme])
   const labelSpans = useRef<(HTMLSpanElement | null)[]>([])
+  const k = strokeScale(size)
+  const label = labelSize(size)
+  const style = {
+    width: size,
+    height: size,
+    '--bloch-label-size': `${label}px`,
+  } as CSSProperties
 
   return (
-    <div className="bloch-sphere" style={{ width: size, height: size }}>
+    <div className="bloch-sphere" style={style}>
       <Canvas
         frameloop="demand"
         dpr={[1, 2]}
@@ -177,20 +244,21 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
       >
         {/* Wireframe sphere */}
         {LATITUDE_LINES.map((points, i) => (
-          <Line key={`lat-${i}`} points={points} color={colors.wire} lineWidth={1} />
+          <Line key={`lat-${i}`} points={points} color={colors.wire} lineWidth={WIDTH.wire * k} />
         ))}
         {MERIDIAN_LINES.map((points, i) => (
-          <Line key={`lon-${i}`} points={points} color={colors.wire} lineWidth={1} />
+          <Line key={`lon-${i}`} points={points} color={colors.wire} lineWidth={WIDTH.wire * k} />
         ))}
-        <Line points={EQUATOR} color={colors.equator} lineWidth={1.25} />
+        <Line points={EQUATOR} color={colors.equator} lineWidth={WIDTH.equator * k} />
 
         {/* Axes (physics convention) */}
-        <Axis to={{ x: AXIS_LENGTH, y: 0, z: 0 }} color={colors.axisX} />
-        <Axis to={{ x: 0, y: AXIS_LENGTH, z: 0 }} color={colors.axisY} />
-        <Axis to={{ x: 0, y: 0, z: AXIS_LENGTH }} color={colors.axisZ} />
+        <Axis to={{ x: AXIS_LENGTH, y: 0, z: 0 }} color={colors.axisX} width={WIDTH.axis * k} />
+        <Axis to={{ x: 0, y: AXIS_LENGTH, z: 0 }} color={colors.axisY} width={WIDTH.axis * k} />
+        <Axis to={{ x: 0, y: 0, z: AXIS_LENGTH }} color={colors.axisZ} width={WIDTH.axis * k} />
 
-        <BlochArrow vector={vector} color={colors.vector} />
+        <BlochArrow vector={vector} color={colors.vector} width={WIDTH.vector * k} />
         <LabelProjector spans={labelSpans} />
+        <CameraZoom zoom={cameraZoom(size, label)} />
 
         {/* Rotate only: zoom and pan would just let the sphere get lost in a small card. */}
         <OrbitControls
