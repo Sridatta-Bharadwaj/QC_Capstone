@@ -1,6 +1,6 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-4, V2-8 merged; V2-1, V2-7, V2-5, V2-6 running)_
+_Last updated: 2026-10-08 — v2 build in progress (V2-0, V2-4, V2-8, V2-7 merged; V2-1, V2-5, V2-6 running)_
 
 ## Current phase
 v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
@@ -25,9 +25,10 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - [x] **V2-0 — Contracts** (2026-10-08, `v2-0-contracts`): `model/types.ts` (ChangeSource split, `InitialState`/`initialStates`, `CodeTab`, `Problem.tab`, limits `MAX_OPERATIONS`/`MAX_UPLOAD_BYTES`/`MAX_URL_BYTES`), `model/circuit.ts` (`defaultInitialStates`, `resizeInitialStates`, `circuitsEqual` + `assignOperationIds` moved here), `model/validate.ts` (`validateCircuit`, implemented), `model/historyStore.ts` (implemented, `coalesceKey`), `model/store.ts` (`setInitialState`), `engine/{simulator,bloch,subset,types,index}.ts` (`productState`, `simulateSteps`, subset stubs), `worker/{protocol,handleRequest,engineClient}.ts` ('steps'/'subset' requests, `step` on analyze, `EngineClient.send`). 832 tests, verify 378/378
 - [x] **V2-4 — Autosave, undo/redo, shareable URL** (2026-10-08, `v2-4-history-persistence`): `src/persistence/{base64url,shareLink,autosave,startup,copyLink}.ts`, `src/history/{history,shortcuts}.ts`, `src/components/Notices/*`, TitleBar (Undo/Redo/New circuit/Copy link), `App.tsx`, `main.tsx` (`initPersistence()` before render). Link format `#c=<base64url({v:1,n,s?,o:[[gate,col,qubits,angle?]]})>`. Coalescing API for V2-6: `runWithHistoryKey(key, fn)`. 908 tests
 - [x] **V2-8 — UI fixes** (2026-10-08, `v2-8-ui-fixes`): `Bloch/{layout.ts,BlochCard,BlochGrid,BlochSphere,Bloch.css}` (spheres up to 320 px; card layouts below/side/stack), `BottomPanel/{BlochPanel,TraceStepsPanel}.tsx`, `Teaching.css` (`.teaching--split`/`.teaching__scroll`), `Layout/{AppShell.tsx,canvasFit.ts}` (bottom 45%, top row fits the qubit count), `index.html` boot split 55%. Sizes: 1280×720 → 320 px (1–2 q), 153 px (6 q); 1024×768 6 q → 117 px, no scrolling. 922 tests
+- [x] **V2-7 — Keep-any-subset partial trace** (2026-10-08, `v2-7-subset-trace`): `engine/subset.ts` (direct + explicit subset trace, Jacobi-based von Neumann entropy, `MAX_EXPLICIT_KEEP` = 3), `Teaching/{KeepSelector,keepStore,useSubsetResult,SubsetSummary}.tsx/ts` (QubitSelector removed), `BottomPanel/{DensityMatricesPanel,TraceStepsPanel}.tsx`, `verify/{export-engine.ts,verify.py,README.md}`. Verify: 378 circuits + 2083 kept sets match Qiskit (max |Δρ| 2.1e-15, |ΔS| 1.1e-14). 956 tests
 
 ## In progress
-- `v2-1-qiskit-sync`, `v2-7-subset-trace` (wave 1); `v2-5-step-debugger`, `v2-6-rotation-sliders` (wave 2)
+- `v2-1-qiskit-sync` (wave 1); `v2-5-step-debugger`, `v2-6-rotation-sliders` (wave 2)
 
 ## Next up
 - Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
@@ -87,6 +88,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 | 2026-10-08 | Pushes use `gh` credentials (`git -c credential.helper='!gh auth git-credential' push`) | Git Credential Manager needs an interactive sign-in; `gh` is already authenticated |
 | 2026-10-08 | V2-4: the `#c=` hash is cleared (replaceState) after it is read and the linked circuit is saved at once; `'restore'` resets history instead of pushing; notices live in a fixed bottom-right `NoticeArea` | A stale hash would override later autosaved edits on reload; notices avoid touching AppShell/StatusBar |
 | 2026-10-08 | V2-8: the top/bottom split auto-fits the canvas to the qubit count (35–55 %) until the user drags the separator | A fixed 45 % split can't avoid the empty canvas for few qubits and still fit 6 wires at 1280×720 |
+| 2026-10-08 | V2-7: Keep chips toggle membership (multi-select); k = 1 keeps the v1 data path (entropy computed from ρₖ on the main thread); explicit steps only for k ≤ 3; all-zero entry cards hidden behind "Show all entries" | Spec asks for a multi-select; avoids two data sources for one-qubit views; 64 cards at k = 3 are unreadable |
 | 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
@@ -120,3 +122,4 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - 2026-10-08 — v2 build started: spec committed, V2-0 contracts merged (832 tests, verify 378/378). Wave 1 launched.
 - 2026-10-08 — V2-4 merged (908 tests).
 - 2026-10-08 — V2-8 merged (922 tests); wave 2 started (V2-5, V2-6).
+- 2026-10-08 — V2-7 merged (956 tests, verify incl. 2083 subsets); browser-checked GHZ keep {q0,q1}.
