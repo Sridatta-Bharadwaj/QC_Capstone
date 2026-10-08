@@ -5,7 +5,7 @@ the right statevectors and single-qubit reduced density matrices.
 
 ## What it proves
 
-For 377 circuits (all presets, hand-picked known states, every gate in several
+For 378 circuits (all presets, hand-picked known states, every gate in several
 layouts, and 240 seeded random circuits on 1–6 qubits), the engine and
 [Qiskit](https://www.ibm.com/quantum/qiskit) agree on:
 
@@ -14,6 +14,12 @@ layouts, and 240 seeded random circuits on 1–6 qubits), the engine and
 2. **The full statevector**, after converting between the two qubit orderings
    (see [Endianness](#endianness)).
 3. **Bloch vector** r = (Tr(ρX), Tr(ρY), Tr(ρZ)) and **purity** Tr(ρ²).
+4. **Keep-any-subset partial trace (V2-7).** For several kept sets K per circuit
+   (every non-empty subset for n ≤ 4; eight fixed sets, contiguous and
+   non-contiguous, for n = 5, 6; 2083 sets in total): the reduced ρ_K, its purity
+   and its von Neumann entropy. Engine: `partialTraceSubset` (direct method,
+   Jacobi eigenvalues for the entropy). Qiskit: `partial_trace(state, [the rest])`
+   and `entropy(ρ_K, base=2)`.
 
 Tolerance: max absolute difference ≤ 1e-9 per entry. The observed differences
 are around 1e-15, which is floating-point rounding.
@@ -30,7 +36,7 @@ are around 1e-15, which is floating-point rounding.
   order) and angles in [−2π, 2π). Gates share columns, and the operations array
   is shuffled, so both sides must apply the same time ordering (by column, then
   by lowest qubit).
-- A negative control: with the endianness fix disabled, 198 of the 377
+- A negative control: with the endianness fix disabled, 198 of the (then) 377
   statevectors mismatch. The comparison really does detect errors.
 
 ## How to run
@@ -95,6 +101,15 @@ _labels_, and q1 means the same qubit in both programs. A single-qubit ρ is
 just a 2×2 matrix in that qubit's own |0⟩, |1⟩ basis, so there is no bit order
 left to disagree about.
 
+**Subset-reduced matrices do need it.** `partial_trace` returns ρ_K over the kept
+qubits in ascending label order but little-endian again: the _lowest_ kept label
+is the least significant bit of the reduced index. The engine reads the kept
+qubits big-endian (lowest label = most significant bit, e.g. keep {q0, q2}:
+index 2 = |q0 q2⟩ = |10⟩). `verify.py` therefore permutes Qiskit's ρ_K with
+`reverse_bits` over k bits (`reduced_to_big_endian`) and asserts a |q0 q2⟩ = |10⟩
+example at start-up. Negative control: without this permutation 1045 of the 2083
+kept sets mismatch.
+
 There is also no global-phase adjustment. The engine's gate matrices match
 Qiskit's conventions (e.g. Rz(θ) = diag(e^{−iθ/2}, e^{iθ/2})), so the
 statevectors agree exactly, not only up to a phase.
@@ -106,7 +121,7 @@ random seed 20261006, tolerance 1e-9.
 
 | Category                                             | Circuits |   max \|Δρ\| |   max \|Δψ\| |   max \|Δr\| | max \|Δpurity\| | Result   |
 | ---------------------------------------------------- | -------: | -----------: | -----------: | -----------: | --------------: | -------- |
-| presets                                              |        5 |     8.88e-16 |     2.22e-16 |     8.88e-16 |        1.78e-15 | PASS     |
+| presets                                              |        6 |     8.88e-16 |     2.22e-16 |     8.88e-16 |        1.78e-15 | PASS     |
 | single-qubit states (\|0⟩ \|1⟩ \|+⟩ \|−⟩ \|i⟩ \|−i⟩) |        6 |     2.22e-16 |     1.11e-16 |     4.44e-16 |        8.88e-16 | PASS     |
 | Bell states (Φ±, Ψ±)                                 |        4 |     2.22e-16 |     1.11e-16 |     0.00e+00 |        4.44e-16 | PASS     |
 | GHZ (3–6 qubits)                                     |        4 |     2.22e-16 |     1.11e-16 |     0.00e+00 |        4.44e-16 | PASS     |
@@ -122,7 +137,31 @@ random seed 20261006, tolerance 1e-9.
 | random n=4                                           |       40 |     1.33e-15 |     2.78e-16 |     1.33e-15 |        2.66e-15 | PASS     |
 | random n=5                                           |       40 |     1.55e-15 |     4.97e-16 |     1.78e-15 |        3.66e-15 | PASS     |
 | random n=6                                           |       40 |     2.11e-15 |     5.66e-16 |     2.11e-15 |        4.22e-15 | PASS     |
-| **Total**                                            |  **377** | **2.11e-15** | **7.71e-16** | **2.11e-15** |    **4.22e-15** | **PASS** |
+| **Total**                                            |  **378** | **2.11e-15** | **7.71e-16** | **2.11e-15** |    **4.22e-15** | **PASS** |
+
+### Keep-any-subset partial trace (V2-7)
+
+Run on 2026-10-08, same setup. Max absolute differences over all kept sets of a category.
+
+| Category            | Circuits | Kept sets | max \|Δρ_K\| | max \|Δpurity\| |   max \|ΔS\| | Result   |
+| ------------------- | -------: | --------: | -----------: | --------------: | -----------: | -------- |
+| presets             |        6 |        28 |     8.88e-16 |        1.78e-15 |     1.60e-15 | PASS     |
+| single-qubit states |        6 |         6 |     2.22e-16 |        8.88e-16 |     1.44e-15 | PASS     |
+| Bell states         |        4 |        12 |     2.22e-16 |        8.88e-16 |     1.44e-15 | PASS     |
+| GHZ (3–6 qubits)    |        4 |        38 |     2.22e-16 |        8.88e-16 |     1.44e-15 | PASS     |
+| single gates        |       27 |        81 |     3.33e-16 |        9.99e-16 |     7.49e-15 | PASS     |
+| rotations           |       66 |        66 |     4.44e-16 |        1.22e-15 |     4.36e-15 | PASS     |
+| CX layouts          |        6 |        36 |     4.44e-16 |        8.88e-16 |     1.44e-15 | PASS     |
+| CZ layouts          |        4 |        28 |     8.88e-16 |        1.78e-15 |     1.60e-15 | PASS     |
+| SWAP layouts        |        5 |        28 |     4.44e-16 |        8.88e-16 |     3.07e-15 | PASS     |
+| Toffoli layouts     |       10 |        80 |     6.66e-16 |        1.33e-15 |     2.96e-15 | PASS     |
+| random n=1          |       40 |        40 |     1.44e-15 |        3.11e-15 |     6.87e-15 | PASS     |
+| random n=2          |       40 |       120 |     1.22e-15 |        3.66e-15 |     7.23e-15 | PASS     |
+| random n=3          |       40 |       280 |     1.55e-15 |        3.55e-15 |     1.12e-14 | PASS     |
+| random n=4          |       40 |       600 |     1.33e-15 |        2.66e-15 |     8.66e-15 | PASS     |
+| random n=5          |       40 |       320 |     1.33e-15 |        4.22e-15 |     1.12e-14 | PASS     |
+| random n=6          |       40 |       320 |     2.11e-15 |        4.22e-15 |     8.72e-15 | PASS     |
+| **Total**           |  **378** |  **2083** | **2.11e-15** |    **4.22e-15** | **1.12e-14** | **PASS** |
 
 Random circuits have 1–24 gates each, drawn from all 16 gate types (CCX only
 when n ≥ 3, two-qubit gates only when n ≥ 2).
