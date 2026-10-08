@@ -1,9 +1,9 @@
 # Project Context Register
 
-_Last updated: 2026-10-08 — v2 build in progress (V2-0 … V2-8 all merged; V2-9 review running)_
+_Last updated: 2026-10-08 — v2 complete on `main` (V2-0 … V2-9 + review fixes); next: security audit_
 
 ## Current phase
-v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
+v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its fixes (`v2-fix-review`), README, screenshots and `docs/DEMO.md`. 2012 tests; verify 519 circuits + 2965 kept sets match Qiskit; production preview makes only same-origin requests. Next: security audit → production readiness → deployment → M10 (PLAN.md → After v2).
 
 ## Done
 - [x] Problem statement received (2026-10-06)
@@ -31,16 +31,16 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - [x] **V2-5 — Step-through debugger** (2026-10-08, `v2-5-step-debugger`): `model/stepStore.ts` (live/step/playing; any circuit edit → Live), `components/Timeline/*` (first/prev/play/next/last, slider, Live toggle, 700 ms play), `Canvas/{CanvasView,CircuitGrid,Canvas.css}` (`[`/`]`, column band + progress line, later gates dimmed), `worker/useEngineBridge.ts` (`step` in analyze), `Teaching/useSubsetResult.ts` (`step` in subset), StatusBar "Step k/N · back to Live", `Layout/canvasFit.ts` (`CIRCUIT_PAD_BOTTOM` 0). 6 qubits fit at 1280×720 and 1024×768. 1510 tests
 - [x] **V2-2 — Initial-state picker** (2026-10-08, `v2-2-initial-states`): `Canvas/InitialStatePicker.tsx` (menu button, portalled menu, keyboard), `Canvas/{CircuitGrid,Canvas.css,CanvasView}`, `codegen/{prep,qasm,qiskit}.ts`, `parser/{prepBlock,qasm,qiskit}.ts` (marked prep blocks ↔ `initialStates`, positioned errors), presets "|−⟩ through H" and "Phase kickback", `verify/*` (start states). Verify: 519 circuits + 2965 kept sets match Qiskit. 1907 tests
 - [x] **V2-3 — Upload / download** (2026-10-08, `v2-3-upload-download`): `src/files/{openFile,download,blochPng,blochPngExport}.ts`, `CodePanel/{FileActions.tsx,CodePanel.tsx,CodePanel.css,codeSync.ts}` (`openCode(tab, text)`: file text kept, source 'file'), `parser/{qasm,qiskit,messages}.ts` (final measurements, gate defs depth 16 / 5000 expansion steps, u/u1/u2/u3/p/sx/sxdg as rotations, QASM 3 rejection, 100 KB / 500 ops / 200 problems caps, per-wire placement), `Bloch/BlochSphere.tsx` (`preserveDrawingBuffer`), fixtures `tests/fixtures/files/*`. 1998 tests, verify 519/519
+- [x] **V2-9 — Review, docs** (2026-10-08, `v2-9-review`, `v2-fix-review`): independent review `docs/reviews/v2-review.md` (no blockers; 2 major, 6 minor, 12 nits) with a resolution table. Fixed R1–R13, R17: limits in canvas/store (`Canvas/actions.ts`, `model/store.ts`), invalid saved data backed up (`persistence/autosave.ts`), split refits on window resize (`Layout/canvasFit.ts`), canvas click-focus + timeline focus (`CanvasView.tsx`, `Timeline.tsx`), Qiskit "gate after the circuit is used" warning (`parser/qiskit.ts`), window drop guard (`files/dropGuard.ts`, `main.tsx`), `collapseEmptyColumns` in `validateCircuit`, step in PNG title and teaching toolbars (`files/blochPng*.ts`, `Teaching/KeepSelector.tsx`), `suggestGateName` hasOwn, capped error count, ρ glyph, no duplicate full ρ, delayed object-URL revoke. Tests `tests/review/fixReview.test.tsx`. Docs: README (v2 features, shortcuts, formats, limits, verify), `docs/screenshots/*` (7 images), `docs/DEMO.md` + `docs/demo/ghz-from-qiskit.qasm`. 2012 tests, verify 519/519
 
 ## In progress
-- `v2-9-review` (fresh reviewer), then `v2-fix-review` + README / screenshots / docs/DEMO.md
+- (nothing)
 
 ## Next up
-- Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
-- Then: security audit → production readiness → deployment → M10 presentation
-- M10 — presentation + scripted demo + offline backup (separate)
+- **Security audit** (PLAN.md → After v2): `npm audit` (2 low: dompurify via monaco-editor, review R19), the Security rules, CSP + security headers for the chosen host, supply chain
+- **Production readiness**: error boundaries, 404/fallback, bundle size, caching, performance at 6 qubits, accessibility pass, browser support (incl. the `THREE.Clock` deprecation warning, review R18)
 - Deployment (GitHub Pages; `base: './'` already set) when the user asks
-- Rehearse the demo at the projector resolution
+- M10 — presentation; rehearse `docs/DEMO.md` at the projector resolution and record the backup video
 
 ## Left (backlog, in order)
 - [ ] M10 — Presentation + live demo prep (slides, scripted demo, offline backup)
@@ -100,6 +100,7 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 | 2026-10-08 | V2-5: no separate 'steps' request (timeline needs no per-step data); timeline bar 24 px and circuit bottom padding removed so 6 qubits still fit | Keep the engine traffic simple; layout budget at 1280×720 |
 | 2026-10-08 | V2-2: wire label = "q0" select button + separate picker button (no nested buttons); prep gates grouped per qubit (gates on different qubits commute, so interleaving is allowed); marker = line comment exactly "initial states"/"end initial states" (case/space-insensitive) | Valid HTML; real exports interleave; unambiguous detection |
 | 2026-10-08 | V2-3: downloads generated from the model (not tab text); an opened file keeps its exact text in its tab; u-family gates mapped to rotations (exact up to global phase) instead of rejected; redefining a built-in gate = warning (built-in used) | Model is always valid; real Qiskit exports use u/p/sx; pasted qelib1.inc should not fail |
+| 2026-10-08 | Review fixes: `validateCircuit` collapses empty-column runs (leading removed, gaps → 1); invalid saved data moved to `qc-capstone:circuit:v2:discarded`; R14/R15/R16/R20 left as is (reasons in the review's resolution table) | Links/saves with huge gaps made 1000-step timelines; never lose a user's circuit silently |
 | 2026-10-08 | ESLint ignores `.worktrees` and pins `tsconfigRootDir`; `.prettierignore` lists `.worktrees` | Agent worktrees inside the repo broke lint on main |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
@@ -118,7 +119,8 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - Monaco bundles its own codicon font under the same family name as @vscode/codicons; new app icons should be checked after Monaco loads.
 - Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
 - `verify/.venv` is gitignored: recreate with `python -m venv verify/.venv` + `pip install -r verify/requirements.txt` (done 2026-10-08). Worktrees share main's `node_modules` and `verify/.venv` via directory junctions.
-- Timeline: clicking First/Last disables that button and focus leaves the canvas, so `[`/`]` stop until the canvas is focused again (review item).
+- Worktree folders under `.worktrees/` still exist (gitignored; all branches merged and pushed). Their `node_modules` and `verify/.venv` are **junctions to the main checkout**: remove those first with `cmd /c rmdir <path>` (removes only the link), then `git worktree remove`. Never delete them recursively, or main's `node_modules`/venv go with them.
+- Playwright MCP can only write under the repo root (`.playwright-mcp/`, gitignored); Bash heredocs containing quotes/backslashes for Python edits are fragile — write scripts with the Write tool.
 - Keep `suggestGateName`, `ParseOptions`, `ParseResult` exported from `parser/qasm.ts` (Qiskit parser imports them).
 - Dev server inside a worktree: fonts/codicons 403 because the `node_modules` junction is outside Vite's `fs.allow`; start Vite via its API with `server.fs.allow: ['D:/Sridatta/QC_Capstone']` (config unchanged).
 - Density Matrices still uses the sticky toolbar; it can opt into `.teaching--split` like Trace Steps.
@@ -140,3 +142,4 @@ v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, 
 - 2026-10-08 — Usage limit stopped V2-2/V2-5 mid-work; both resumed. V2-5 merged (1510 tests).
 - 2026-10-08 — V2-2 merged (1907 tests, verify 519 circuits); V2-3 launched.
 - 2026-10-08 — V2-3 merged (1998 tests, verify 519/519). All build milestones done; V2-9 review launched.
+- 2026-10-08 — V2-9: independent review (no blockers) → `v2-fix-review` merged with README, screenshots, DEMO.md. v2 complete: 2012 tests, verify 519/519 + 2965 subsets, preview offline (same-origin only). All branches on origin.
