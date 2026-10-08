@@ -494,10 +494,12 @@ function SubsetTraceSteps({
 
   if (computing || analysis === null || result === null) {
     return (
-      <div className="teaching">
+      <div className="teaching teaching--split">
         {toolbar}
-        {intro}
-        <MatrixSkeleton label="partial trace steps" size={Math.min(size, 8)} />
+        <div className="teaching__scroll">
+          {intro}
+          <MatrixSkeleton label="partial trace steps" size={Math.min(size, 8)} />
+        </div>
       </div>
     )
   }
@@ -513,168 +515,170 @@ function SubsetTraceSteps({
   const hiddenEntries = entries ? entries.length - nonZeroEntries.length : 0
 
   return (
-    <div className="teaching">
+    <div className="teaching teaching--split">
       {toolbar}
-      {intro}
+      <div className="teaching__scroll">
+        {intro}
 
-      <ol className="steps">
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              The state <MathText text="|ψ⟩" />
-            </h3>
-            <p>
-              The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
-              listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bits of {kept} are
-              underlined.
-            </p>
-            <Amplitudes state={analysis.state} numQubits={numQubits} qubit={keep} />
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              Density matrix{' '}
-              <span className="math">
-                ρ = <MathText text="|ψ⟩⟨ψ|" />
-              </span>
-            </h3>
-            <p>
-              Each entry is{' '}
-              <span className="math">
-                ρ[i][j] = ψ<sub>i</sub> · conj(ψ<sub>j</sub>)
-              </span>
-              . For {numQubits} qubits ρ is {dim}×{dim} = {dim * dim} entries.
-            </p>
-            {numQubits > MAX_DISPLAY_QUBITS ? (
-              <p className="teaching-note" data-testid="too-large">
-                Full ρ is {dim}×{dim} — too large to display. Step 3 lists the entries that matter
-                for {kept}.
-              </p>
-            ) : result.fullRho === null ? (
-              <p className="teaching-note" data-testid="full-rho-hidden">
-                The full ρ is shown here when at most {MAX_DISPLAY_KEPT} qubits are kept.
-              </p>
-            ) : (
-              <div className="matrix-scroll">
-                <MatrixTable
-                  matrix={result.fullRho}
-                  numQubits={numQubits}
-                  label="Full density matrix"
-                  testId="full-rho"
-                  highlightQubit={keep}
-                  compact
-                />
-              </div>
-            )}
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>Trace out {others ?? 'nothing'}</h3>
-            {others === null ? (
+        <ol className="steps">
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                The state <MathText text="|ψ⟩" />
+              </h3>
               <p>
-                Every qubit is kept, so <Rho qubit={keep} /> is ρ itself: each entry is a single
-                term.
+                The circuit produces this {numQubits}-qubit state. Only non-zero amplitudes are
+                listed. Kets read <span className="math">|q0 q1 ...⟩</span>; the bits of {kept} are
+                underlined.
               </p>
-            ) : (
-              <p>
-                For each entry{' '}
+              <Amplitudes state={analysis.state} numQubits={numQubits} qubit={keep} />
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                Density matrix{' '}
                 <span className="math">
-                  <Rho qubit={keep} />
-                  [a][b]
-                </span>{' '}
-                (a, b = basis states <span className="math">{keptKetLabel(keep)}</span>), add up the
-                entries of ρ whose row has {kept} = a, whose column has {kept} = b, and where{' '}
-                {others} {numQubits - k === 1 ? 'has' : 'have'} the same value in row and column
-                (shown as <span className="math">·</span>). That is 2<sup>{numQubits - k}</sup> ={' '}
-                {termsPerEntry} term{termsPerEntry === 1 ? '' : 's'} per entry. Terms that are 0 are
-                hidden.
+                  ρ = <MathText text="|ψ⟩⟨ψ|" />
+                </span>
+              </h3>
+              <p>
+                Each entry is{' '}
+                <span className="math">
+                  ρ[i][j] = ψ<sub>i</sub> · conj(ψ<sub>j</sub>)
+                </span>
+                . For {numQubits} qubits ρ is {dim}×{dim} = {dim * dim} entries.
               </p>
-            )}
-            {entries === null ? (
-              <p className="teaching-note" data-testid="entries-too-many">
-                With {k} kept qubits <Rho qubit={keep} /> has {size * size} entries — too many to
-                list. The steps are shown for up to {MAX_DISPLAY_KEPT} kept qubits.
-              </p>
-            ) : (
-              <>
-                {hiddenEntries > 0 && (
-                  <p data-testid="hidden-entries">
-                    {showAllEntries
-                      ? `All ${entries.length} entries are shown.`
-                      : `${hiddenEntries} of ${entries.length} entries have only zero terms and are hidden.`}{' '}
-                    <button
-                      type="button"
-                      className="link-button"
-                      aria-expanded={showAllEntries}
-                      onClick={() => setShowAllEntries((v) => !v)}
-                    >
-                      {showAllEntries ? 'Hide all-zero entries' : 'Show all entries'}
-                    </button>
-                  </p>
-                )}
-                <div className="trace-entries">
-                  {visibleEntries.map((entry) => (
-                    <SubsetEntryCard
-                      key={`${keep.join(',')}-${entry.row}-${entry.col}`}
-                      entry={entry}
-                      numQubits={numQubits}
-                      keep={keep}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </li>
-
-        <li className="step">
-          <div className="step__body">
-            <h3>
-              Result: reduced density matrix <Rho qubit={keep} />
-            </h3>
-            {explicitReduced === null ? (
-              <p className="teaching-note" data-testid="reduced-too-large">
-                <Rho qubit={keep} /> is {size}×{size} — too large to display.
-              </p>
-            ) : (
-              <>
+              {numQubits > MAX_DISPLAY_QUBITS ? (
+                <p className="teaching-note" data-testid="too-large">
+                  Full ρ is {dim}×{dim} — too large to display. Step 3 lists the entries that matter
+                  for {kept}.
+                </p>
+              ) : result.fullRho === null ? (
+                <p className="teaching-note" data-testid="full-rho-hidden">
+                  The full ρ is shown here when at most {MAX_DISPLAY_KEPT} qubits are kept.
+                </p>
+              ) : (
                 <div className="matrix-scroll">
                   <MatrixTable
-                    matrix={explicitReduced}
-                    numQubits={k}
-                    label={`Reduced density matrix of ${kept} (explicit method)`}
-                    testId="explicit-reduced"
+                    matrix={result.fullRho}
+                    numQubits={numQubits}
+                    label="Full density matrix"
+                    testId="full-rho"
+                    highlightQubit={keep}
+                    compact
                   />
                 </div>
-                <p
-                  className={`check-line${agrees ? '' : ' check-line--bad'}`}
-                  data-testid="check-line"
-                >
-                  <span
-                    className={`codicon ${agrees ? 'codicon-pass' : 'codicon-error'}`}
-                    aria-hidden="true"
-                  />
-                  {agrees
-                    ? 'Direct method (from the amplitudes, no full ρ) gives the same matrix'
-                    : 'Direct method (from the amplitudes, no full ρ) gives a DIFFERENT matrix'}
-                  : max difference {formatScientific(diff)}
+              )}
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>Trace out {others ?? 'nothing'}</h3>
+              {others === null ? (
+                <p>
+                  Every qubit is kept, so <Rho qubit={keep} /> is ρ itself: each entry is a single
+                  term.
                 </p>
-              </>
-            )}
-            <SubsetQuantities purity={result.purity} entropy={result.entropy} numKept={k} />
-            <SubsetNote
-              numQubits={numQubits}
-              keep={keep}
-              purity={result.purity}
-              entropy={result.entropy}
-            />
-          </div>
-        </li>
-      </ol>
+              ) : (
+                <p>
+                  For each entry{' '}
+                  <span className="math">
+                    <Rho qubit={keep} />
+                    [a][b]
+                  </span>{' '}
+                  (a, b = basis states <span className="math">{keptKetLabel(keep)}</span>), add up
+                  the entries of ρ whose row has {kept} = a, whose column has {kept} = b, and where{' '}
+                  {others} {numQubits - k === 1 ? 'has' : 'have'} the same value in row and column
+                  (shown as <span className="math">·</span>). That is 2<sup>{numQubits - k}</sup> ={' '}
+                  {termsPerEntry} term{termsPerEntry === 1 ? '' : 's'} per entry. Terms that are 0
+                  are hidden.
+                </p>
+              )}
+              {entries === null ? (
+                <p className="teaching-note" data-testid="entries-too-many">
+                  With {k} kept qubits <Rho qubit={keep} /> has {size * size} entries — too many to
+                  list. The steps are shown for up to {MAX_DISPLAY_KEPT} kept qubits.
+                </p>
+              ) : (
+                <>
+                  {hiddenEntries > 0 && (
+                    <p data-testid="hidden-entries">
+                      {showAllEntries
+                        ? `All ${entries.length} entries are shown.`
+                        : `${hiddenEntries} of ${entries.length} entries have only zero terms and are hidden.`}{' '}
+                      <button
+                        type="button"
+                        className="link-button"
+                        aria-expanded={showAllEntries}
+                        onClick={() => setShowAllEntries((v) => !v)}
+                      >
+                        {showAllEntries ? 'Hide all-zero entries' : 'Show all entries'}
+                      </button>
+                    </p>
+                  )}
+                  <div className="trace-entries">
+                    {visibleEntries.map((entry) => (
+                      <SubsetEntryCard
+                        key={`${keep.join(',')}-${entry.row}-${entry.col}`}
+                        entry={entry}
+                        numQubits={numQubits}
+                        keep={keep}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </li>
+
+          <li className="step">
+            <div className="step__body">
+              <h3>
+                Result: reduced density matrix <Rho qubit={keep} />
+              </h3>
+              {explicitReduced === null ? (
+                <p className="teaching-note" data-testid="reduced-too-large">
+                  <Rho qubit={keep} /> is {size}×{size} — too large to display.
+                </p>
+              ) : (
+                <>
+                  <div className="matrix-scroll">
+                    <MatrixTable
+                      matrix={explicitReduced}
+                      numQubits={k}
+                      label={`Reduced density matrix of ${kept} (explicit method)`}
+                      testId="explicit-reduced"
+                    />
+                  </div>
+                  <p
+                    className={`check-line${agrees ? '' : ' check-line--bad'}`}
+                    data-testid="check-line"
+                  >
+                    <span
+                      className={`codicon ${agrees ? 'codicon-pass' : 'codicon-error'}`}
+                      aria-hidden="true"
+                    />
+                    {agrees
+                      ? 'Direct method (from the amplitudes, no full ρ) gives the same matrix'
+                      : 'Direct method (from the amplitudes, no full ρ) gives a DIFFERENT matrix'}
+                    : max difference {formatScientific(diff)}
+                  </p>
+                </>
+              )}
+              <SubsetQuantities purity={result.purity} entropy={result.entropy} numKept={k} />
+              <SubsetNote
+                numQubits={numQubits}
+                keep={keep}
+                purity={result.purity}
+                entropy={result.entropy}
+              />
+            </div>
+          </li>
+        </ol>
+      </div>
     </div>
   )
 }
