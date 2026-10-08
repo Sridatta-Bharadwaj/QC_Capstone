@@ -155,6 +155,9 @@ describe('toQiskit presets', () => {
       'qc.ry(-pi/4, 1)\nqc.cx(0, 1)\nqc.cx(1, 2)\nqc.cx(0, 1)\nqc.x(0)\n',
     product: 'qc = QuantumCircuit(3)\nqc.h(0)\nqc.x(1)\nqc.h(2)\nqc.s(2)\n',
     partial: 'qc = QuantumCircuit(2)\nqc.ry(pi/3, 0)\nqc.cx(0, 1)\n',
+    kickback:
+      'qc = QuantumCircuit(2)\n# initial states\nqc.h(0)\nqc.x(1)\nqc.h(1)\n# end initial states\n' +
+      'qc.cx(0, 1)\n',
   }
 
   it('covers every multi-qubit preset', () => {

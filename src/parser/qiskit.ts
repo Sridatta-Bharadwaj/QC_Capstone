@@ -32,20 +32,31 @@
 //  2. read statements: classify each logical line and turn gate calls into `GateCall`s.
 //  3. place: each gate goes in the first column after the last gate on any wire in its span
 //     (`earliestFreeColumn`), so written order = time order, like the QASM parser.
-// A later "initial-state prep block" pass (V2-2) can sit between steps 2 and 3: it gets the
-// comments (with line numbers) and the GateCall list (each with its line).
+// Between steps 2 and 3 the initial-states pass (V2-2, prepBlock.ts) takes the gate calls
+// written between `# initial states` and `# end initial states` out of the list and turns them
+// into the wires' start states: they are not circuit operations.
 import { QISKIT_METHODS } from '../codegen/qiskit'
 import { evaluateAngle, QISKIT_PI_NAMES } from '../model/angle'
-import { assignOperationIds, defaultInitialStates, earliestFreeColumn } from '../model/circuit'
+import { assignOperationIds, earliestFreeColumn } from '../model/circuit'
 import {
   GATES,
   MAX_OPERATIONS,
   MAX_QUBITS,
   MAX_UPLOAD_BYTES,
   type GateType,
+  type InitialState,
   type Operation,
   type Problem,
 } from '../model/types'
+import {
+  commentSpan,
+  findPrepBlock,
+  isInPrepBlock,
+  resolveInitialStates,
+  type PrepSyntax,
+  type SourceComment,
+  type Span,
+} from './prepBlock'
 import { suggestGateName, type ParseOptions, type ParseResult } from './qasm'
 
 export type { ParseOptions, ParseResult }
@@ -155,10 +166,15 @@ interface LogicalLine {
   indent: number
 }
 
-/** A `# …` comment (kept for the V2-2 initial-state block markers). */
-export interface Comment {
-  text: string
-  line: number
+/** A `# …` comment, `#` included (kept for the V2-2 initial-state block markers). */
+export type Comment = SourceComment
+
+/** Names used in the initial-states block messages. */
+const QISKIT_PREP_SYNTAX: PrepSyntax = {
+  beginMarker: '# initial states',
+  endMarker: '# end initial states',
+  gateName: (gate) => QISKIT_METHODS[gate],
+  qubitName: (qubit) => `qubit ${qubit}`,
 }
 
 interface Tokenized {
@@ -236,7 +252,7 @@ function tokenize(source: string, problems: Problem[]): Tokenized {
     if (ch === '#') {
       const start = i
       while (i < source.length && source[i] !== '\n' && source[i] !== '\r') i += 1
-      comments.push({ text: source.slice(start, i), line })
+      comments.push({ text: source.slice(start, i), line, column: col(start), endColumn: col(i) })
       continue
     }
 
@@ -490,7 +506,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
     return { circuit: null, problems }
   }
 
-  const { lines } = tokenize(source, problems)
+  const { lines, comments } = tokenize(source, problems)
 
   // Lines where the tokenizer already reported a syntax error (unmatched bracket, bad
   // character…). Statements touching them are skipped, so one typo gives one error.
@@ -574,6 +590,12 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   let numQubits: number | null = null
   let created: Token | null = null
   const calls: GateCall[] = []
+
+  // Initial states block (V2-2): gate calls on the lines between the markers.
+  const errorAtSpan = (message: string, span: Span) =>
+    problems.push({ severity: 'error', message, tab: 'qiskit', ...span })
+  const prepBlock = findPrepBlock(comments, QISKIT_PREP_SYNTAX, errorAtSpan)
+  const inBlock = (call: GateCall) => isInPrepBlock(prepBlock, call.first.line)
   /** Measured qubit → the `measure` token, for "gate after measurement" errors. */
   const measured = new Map<number, Token>()
   let tooManyGates = false
@@ -986,6 +1008,25 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
     if (hasSyntaxError(tokens)) continue
     const first = tokens[0]
 
+    // Inside the initial states block only gate calls on the circuit are allowed.
+    if (isInPrepBlock(prepBlock, first.line)) {
+      const isGateCall =
+        !statement.compound &&
+        first.text === circuitName &&
+        isOp(tokens[1], '.') &&
+        isName(tokens[2]) &&
+        GATE_BY_METHOD.has(tokens[2].text) &&
+        isOp(tokens[3], '(')
+      if (!isGateCall) {
+        error(
+          'Only preparation gates (x, h, s, sdg) go inside the initial states block.',
+          first,
+          tokens[tokens.length - 1],
+        )
+        continue
+      }
+    }
+
     if (statement.compound) {
       // e.g. `for k in range(3): qc.h(k)` on one line, or the header of an indented block.
       const call = findMutatingCall(tokens)
@@ -1051,6 +1092,41 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
     errorAtStart('No circuit found: create one, e.g. qc = QuantumCircuit(2).')
   }
 
+  // The block must sit at the top: after QuantumCircuit(n), before every ordinary gate.
+  let initialStates: InitialState[] = []
+  if (prepBlock) {
+    const at = commentSpan(prepBlock.begin)
+    const firstGate = calls.find((call) => !inBlock(call))
+    // `created` is assigned inside a nested function, so TypeScript can't narrow it here.
+    const createdAt = created as Token | null
+    if (!createdAt || createdAt.line >= prepBlock.begin.line) {
+      errorAtSpan(
+        'The initial states block must come right after the circuit is created (qc = QuantumCircuit(n)).',
+        at,
+      )
+    } else if (firstGate && firstGate.first.line < prepBlock.begin.line) {
+      errorAtSpan(
+        `The initial states block must come before the first gate (line ${firstGate.first.line}), ` +
+          'right after the circuit is created.',
+        at,
+      )
+    }
+  }
+  // A too-large register was already reported; don't build a huge state list for it.
+  if (numQubits !== null && numQubits <= MAX_QUBITS) {
+    const prepCalls = calls.filter(inBlock).map((call) => ({
+      gate: call.gate,
+      qubits: call.qubits,
+      span: {
+        line: call.first.line,
+        column: call.first.column,
+        endLine: call.last.endLine,
+        endColumn: call.last.endColumn,
+      },
+    }))
+    initialStates = resolveInitialStates(prepCalls, numQubits, QISKIT_PREP_SYNTAX, errorAtSpan)
+  }
+
   // Report in text order (block errors were found in a separate pass above). Stable sort.
   problems.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0))
 
@@ -1058,8 +1134,9 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   if (hasError || numQubits === null) return { circuit: null, problems }
 
   // --- 4. Place the gates: written order = time order --------------------------------------
+  // Preparation gates are not operations: only the calls outside the block are placed.
   const placed: Operation[] = []
-  for (const call of calls) {
+  for (const call of calls.filter((c) => !inBlock(c))) {
     const column = earliestFreeColumn({ operations: placed }, call.qubits)
     placed.push({
       id: '', // real ids are assigned below
@@ -1073,7 +1150,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   return {
     circuit: {
       numQubits: n,
-      initialStates: defaultInitialStates(n),
+      initialStates,
       operations: assignOperationIds(
         placed.map(({ gate, column, qubits, angle }) => ({
           gate,

@@ -13,20 +13,34 @@
 // squiggles point at the exact characters. After an error the parser skips to the next `;`
 // and keeps going, so one pass reports as many problems as is reasonable.
 //
+// Initial states (V2-2): gates between `// initial states` and `// end initial states` (right
+// after the qreg) set the wires' start states instead of becoming operations; see prepBlock.ts.
+//
 // Auto-placement: written order = time order. Each gate is put in the first column after the
 // last gate that touches any wire in its span (`earliestFreeColumn`), so independent gates
 // share a column and dependent gates follow each other.
 import { QASM_GATE_NAMES } from '../codegen/qasm'
 import { parseAngle } from '../model/angle'
-import { assignOperationIds, defaultInitialStates, earliestFreeColumn } from '../model/circuit'
+import { assignOperationIds, earliestFreeColumn } from '../model/circuit'
 import {
   GATES,
   MAX_QUBITS,
   type Circuit,
   type GateType,
   type Operation,
+  type InitialState,
   type Problem,
 } from '../model/types'
+import {
+  commentSpan,
+  findPrepBlock,
+  isInPrepBlock,
+  resolveInitialStates,
+  type PrepCall,
+  type PrepSyntax,
+  type SourceComment,
+  type Span,
+} from './prepBlock'
 
 export interface ParseOptions {
   /**
@@ -118,7 +132,30 @@ const IDENT_PART = /[A-Za-z0-9_π]/
 const NUMBER = /(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y
 const SINGLE_SYMBOLS = new Set([';', ',', '[', ']', '(', ')', '{', '}', '+', '-', '*', '/', '^'])
 
-function tokenize(source: string, problems: Problem[]): Token[] {
+/** Names used in the initial-states block messages. */
+const QASM_PREP_SYNTAX: PrepSyntax = {
+  beginMarker: '// initial states',
+  endMarker: '// end initial states',
+  gateName: (gate) => QASM_GATE_NAMES[gate],
+  qubitName: (qubit) => `q[${qubit}]`,
+}
+
+/** Statements that are not gates (none of them may sit inside the initial states block). */
+const NON_GATE_KEYWORDS = new Set([
+  'OPENQASM',
+  'include',
+  'qreg',
+  'creg',
+  'measure',
+  'reset',
+  'if',
+  'barrier',
+  'gate',
+  'opaque',
+])
+
+/** Line comments are collected into `comments` (only the initial-states markers use them). */
+function tokenize(source: string, problems: Problem[], comments: SourceComment[] = []): Token[] {
   const tokens: Token[] = []
   let i = 0
   let line = 1
@@ -150,9 +187,12 @@ function tokenize(source: string, problems: Problem[]): Token[] {
       continue
     }
 
-    // Line comment: skip to the end of the line.
+    // Line comment: skip to the end of the line (but remember it for the block markers).
     if (ch === '/' && source[i + 1] === '/') {
+      const start = i
       while (i < source.length && source[i] !== '\n') i += 1
+      const text = source.slice(start, i).replace(/\r$/, '')
+      comments.push({ text, line, column: col(start), endColumn: col(start + text.length) })
       continue
     }
 
@@ -300,7 +340,8 @@ type ParsedOp = Omit<Operation, 'id'>
 
 export function parseQasm(source: string, options: ParseOptions = {}): ParseResult {
   const problems: Problem[] = []
-  const tokens = tokenize(source, problems)
+  const comments: SourceComment[] = []
+  const tokens = tokenize(source, problems, comments)
   let pos = 0
 
   let sawHeader = false
@@ -309,6 +350,16 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
   const state: { qreg: Register | null } = { qreg: null }
   const cregNames = new Set<string>()
   const ops: ParsedOp[] = []
+
+  // --- initial states block (V2-2) -------------------------------------------
+  const errorAtSpan = (message: string, span: Span) =>
+    problems.push({ severity: 'error', message, ...span })
+  const prepBlock = findPrepBlock(comments, QASM_PREP_SYNTAX, errorAtSpan)
+  /** Gates written inside the block: they set start states, they are not operations. */
+  const prepCalls: PrepCall[] = []
+  /** Line of the qreg declaration and of the first ordinary gate, for the "at the top" rule. */
+  let qregLine: number | null = null
+  let firstGateLine: number | null = null
 
   // --- token helpers ---------------------------------------------------------
 
@@ -479,6 +530,7 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
   function parseQreg(keyword: Token) {
     const decl = parseRegisterDecl(keyword)
     if (!decl) return
+    qregLine ??= keyword.line
     const { register, last } = decl
     const existing = state.qreg
     if (existing) {
@@ -680,8 +732,24 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
     const errorsAfter = problems.filter((p) => p.severity === 'error').length
     if (errorsAfter > errorsBefore) return
 
-    // Auto-placement: first column after the last gate touching this gate's span.
     const qubits = args.map((a) => a.index)
+    if (isInPrepBlock(prepBlock, nameToken.line)) {
+      // A preparation gate: it only says which state the wire starts in (checked below).
+      prepCalls.push({
+        gate,
+        qubits,
+        span: {
+          line: nameToken.line,
+          column: nameToken.column,
+          endLine: last.line,
+          endColumn: last.endColumn,
+        },
+      })
+      return
+    }
+    firstGateLine ??= nameToken.line
+
+    // Auto-placement: first column after the last gate touching this gate's span.
     const column = earliestFreeColumn({ operations: asOps(ops) }, qubits)
     ops.push({ gate, column, qubits, ...(angle === undefined ? {} : { angle }) })
   }
@@ -697,6 +765,13 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
     if (!sawHeader && statementCount === 0 && t.text !== 'OPENQASM') {
       error("Missing header: the program must start with 'OPENQASM 2.0;'.", t)
       sawHeader = true // report once
+    }
+    if (t.kind === 'ident' && NON_GATE_KEYWORDS.has(t.text) && isInPrepBlock(prepBlock, t.line)) {
+      error(
+        `'${t.text}' cannot appear inside the initial states block: only preparation gates ` +
+          '(x, h, s, sdg) go between the markers.',
+        t,
+      )
     }
     if (t.kind !== 'ident') {
       error(`Unexpected '${t.text}': expected a statement such as h q[0];`, t)
@@ -757,13 +832,35 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
     error("Missing quantum register: declare one, e.g. 'qreg q[2];'.", first)
   }
 
-  const hasError = problems.some((p) => p.severity === 'error')
+  // The block must sit at the top: after the register, before every ordinary gate.
   const qreg = state.qreg
+  let initialStates: InitialState[] = []
+  if (prepBlock) {
+    const at = commentSpan(prepBlock.begin)
+    if (qregLine === null || qregLine >= prepBlock.begin.line) {
+      errorAtSpan(
+        'The initial states block must come right after the register declaration (qreg q[n];).',
+        at,
+      )
+    } else if (firstGateLine !== null && firstGateLine < prepBlock.begin.line) {
+      errorAtSpan(
+        `The initial states block must come before the first gate (line ${firstGateLine}), ` +
+          'right after the register declaration.',
+        at,
+      )
+    }
+  }
+  // A too-large register was already reported; don't build a huge state list for it.
+  if (qreg && qreg.size <= MAX_QUBITS) {
+    initialStates = resolveInitialStates(prepCalls, qreg.size, QASM_PREP_SYNTAX, errorAtSpan)
+  }
+
+  const hasError = problems.some((p) => p.severity === 'error')
   if (hasError || !qreg) return { circuit: null, problems }
   return {
     circuit: {
       numQubits: qreg.size,
-      initialStates: defaultInitialStates(qreg.size),
+      initialStates,
       operations: assignOperationIds(ops, options.previous),
     },
     problems,
