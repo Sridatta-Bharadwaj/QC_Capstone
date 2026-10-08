@@ -601,6 +601,9 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   /** Measured qubit → the `measure` token, for "gate after measurement" errors. */
   const measured = new Map<number, Token>()
   let tooManyGates = false
+  /** First top-level line that uses the circuit without changing it (e.g. Statevector(qc)). */
+  let usedAt: Token | null = null
+  let warnedUseBeforeGate = false
 
   /** Parses `(args)` of a call whose `(` is at `openIndex`. Null after reporting an error. */
   function readArguments(tokens: Token[], openIndex: number, what: string): Argument[] | null {
@@ -887,6 +890,16 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
       return
     }
 
+    if (usedAt !== null && !warnedUseBeforeGate) {
+      warnedUseBeforeGate = true
+      warning(
+        `This gate comes after line ${usedAt.line}, which already uses '${variable.text}': in Python ` +
+          `that line sees the circuit without it. This app applies every gate.`,
+        variable,
+        last,
+      )
+    }
+
     const args = readArguments(tokens, 3, `${label}(...)`)
     if (!args) return
     const names = parameterNames(gate)
@@ -1079,6 +1092,15 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
     // unless a gate call hides inside it.
     const hidden = findMutatingCall(tokens)
     if (hidden) straightLineError(hidden)
+    // Remember the first line that USES the circuit (e.g. Statevector(qc)): in real Python it
+    // sees only the gates above it, so later gates are flagged with a warning.
+    else if (
+      usedAt === null &&
+      circuitName !== null &&
+      tokens.some((t) => t !== first && isName(t, circuitName as string))
+    ) {
+      usedAt = first
+    }
   }
 
   if (lines.length === 0) {

@@ -2,10 +2,11 @@
 //
 // With a fixed split, one or two qubits leave most of the canvas empty while the Bloch spheres
 // (the main output) are squeezed into the bottom panel. So until the user drags the separator
-// themselves, the top row is resized whenever the qubit count changes: just tall enough for
+// themselves, the top row is resized whenever the qubit count or the window size changes
+// (e.g. moving to a smaller projector screen after loading): just tall enough for
 // the wires plus a little room, never below MIN_TOP_SHARE (the code panel shares that row)
 // and never above MAX_TOP_SHARE (the default 55 / 45 split, where 6 qubits fit at 1280×720).
-import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import type { LayoutChangedMeta, PanelImperativeHandle } from 'react-resizable-panels'
 import { ROW_H, RULER_H } from '../Canvas/CircuitGrid'
 
@@ -28,9 +29,28 @@ export function fitTopHeight(groupHeight: number, chrome: number, numQubits: num
   )
 }
 
+/** A counter that increases (at most once per frame) whenever the window is resized. */
+function useWindowResizeTick(): number {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    let frame = 0
+    const onResize = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => setTick((t) => t + 1))
+    }
+    window.addEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      cancelAnimationFrame(frame)
+    }
+  }, [])
+  return tick
+}
+
 /**
- * Resizes `topPanel` to fit the circuit whenever `numQubits` changes, until the user resizes
- * the split by hand. Returns the `onLayoutChanged` handler for the vertical Group.
+ * Resizes `topPanel` to fit the circuit whenever `numQubits` or the window size changes, until
+ * the user resizes the split by hand. Returns the `onLayoutChanged` handler for the vertical
+ * Group.
  */
 export function useCanvasFit(
   topPanel: RefObject<PanelImperativeHandle | null>,
@@ -38,6 +58,7 @@ export function useCanvasFit(
   numQubits: number,
 ) {
   const userResized = useRef(false)
+  const resizeTick = useWindowResizeTick()
 
   useEffect(() => {
     if (userResized.current) return
@@ -55,7 +76,7 @@ export function useCanvasFit(
       if (Math.abs(target - inPixels) >= 1) panel.resize(`${target}px`)
     })
     return () => cancelAnimationFrame(frame)
-  }, [topPanel, canvasPanel, numQubits])
+  }, [topPanel, canvasPanel, numQubits, resizeTick])
 
   return useCallback((_layout: unknown, meta: LayoutChangedMeta) => {
     if (meta.isUserInteraction) userResized.current = true

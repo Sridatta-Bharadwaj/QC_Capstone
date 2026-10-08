@@ -3,7 +3,7 @@
 // Step k shows the state after columns 0..k−1 (step 0 = the start state, step N = after the
 // last column = the final state). "Live" always shows the final state and is the default;
 // moving the slider or pressing a step button turns it off, any circuit edit turns it back on.
-import { useEffect, type ChangeEvent } from 'react'
+import { useEffect, useRef, type ChangeEvent, type MouseEvent } from 'react'
 import { columnCount } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
 import { currentStep, useStepStore } from '../../model/stepStore'
@@ -19,6 +19,20 @@ export function Timeline() {
   const stepBy = useStepStore((s) => s.stepBy)
   const goLive = useStepStore((s) => s.goLive)
   const setPlaying = useStepStore((s) => s.setPlaying)
+  const sliderRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * A step button that just became disabled (First at step 0, Last at the end) drops keyboard
+   * focus to the page, which would also stop `[` / `]`. Move focus to the slider instead.
+   */
+  function keepFocus(e: MouseEvent<HTMLButtonElement>) {
+    const button = e.currentTarget
+    requestAnimationFrame(() => {
+      if (button.disabled && document.activeElement !== sliderRef.current) {
+        sliderRef.current?.focus()
+      }
+    })
+  }
 
   // Playing: advance one step every PLAY_STEP_MS and stop on the last step. Each step is a
   // plain jump (no tweening), so this also behaves correctly under prefers-reduced-motion.
@@ -61,7 +75,10 @@ export function Timeline() {
         aria-label="First step (start state)"
         title="First step: the start state"
         disabled={empty || atStart}
-        onClick={() => goTo(0, numSteps)}
+        onClick={(e) => {
+          goTo(0, numSteps)
+          keepFocus(e)
+        }}
       >
         <span className="codicon codicon-debug-reverse-continue" aria-hidden="true" />
       </button>
@@ -71,7 +88,10 @@ export function Timeline() {
         aria-label="Previous step"
         title="Previous step ( [ )"
         disabled={empty || atStart}
-        onClick={() => stepBy(-1, numSteps)}
+        onClick={(e) => {
+          stepBy(-1, numSteps)
+          keepFocus(e)
+        }}
       >
         <span className="codicon codicon-chevron-left" aria-hidden="true" />
       </button>
@@ -95,7 +115,10 @@ export function Timeline() {
         aria-label="Next step"
         title="Next step ( ] )"
         disabled={empty || atEnd}
-        onClick={() => stepBy(1, numSteps)}
+        onClick={(e) => {
+          stepBy(1, numSteps)
+          keepFocus(e)
+        }}
       >
         <span className="codicon codicon-chevron-right" aria-hidden="true" />
       </button>
@@ -105,12 +128,16 @@ export function Timeline() {
         aria-label="Last step (after the last column)"
         title="Last step: after the last column"
         disabled={empty || atEnd}
-        onClick={() => goTo(numSteps, numSteps)}
+        onClick={(e) => {
+          goTo(numSteps, numSteps)
+          keepFocus(e)
+        }}
       >
         <span className="codicon codicon-debug-continue" aria-hidden="true" />
       </button>
 
       <input
+        ref={sliderRef}
         type="range"
         className="timeline__slider"
         min={0}

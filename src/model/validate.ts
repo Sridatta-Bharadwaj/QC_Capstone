@@ -4,7 +4,7 @@
 // Everything here treats its input as hostile: it never trusts types, never indexes
 // objects with untrusted keys without an own-property check, never throws, and builds
 // a brand-new Circuit (fresh ids, no extra keys) instead of passing the input through.
-import { isPlacementFree, newOperationId, validateOperation } from './circuit'
+import { collapseEmptyColumns, isPlacementFree, newOperationId, validateOperation } from './circuit'
 import {
   GATES,
   INITIAL_STATES,
@@ -81,6 +81,7 @@ function validateOp(raw: unknown, numQubits: number): Operation | string {
  *
  * Accepts `{ numQubits, initialStates?, operations }`. A missing `initialStates` means all
  * |0⟩ (circuits saved before v2). Returns a fresh, safe Circuit or a one-line error message.
+ * Empty columns before the first gate are removed and longer empty runs shortened to one.
  * Never throws and never returns a partial circuit.
  */
 export function validateCircuit(input: unknown): ValidationResult {
@@ -126,7 +127,9 @@ export function validateCircuit(input: unknown): ValidationResult {
       }
       circuit.operations.push(op)
     }
-    return { circuit }
+    // Long runs of empty columns (e.g. one gate at column 999) are shortened to one empty
+    // column; the physics is unchanged (see collapseEmptyColumns).
+    return { circuit: collapseEmptyColumns(circuit) }
   } catch {
     return { error: 'Not a valid circuit.' }
   }

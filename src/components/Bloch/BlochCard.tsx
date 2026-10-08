@@ -73,7 +73,8 @@ export function BlochCard({ data, sphereSize = DEFAULT_SPHERE, stats = 'below' }
           onClick={showReducedRho}
         >
           {/* Narrow cards drop the word and keep just "ρ" (see Bloch.css). */}
-          <span className="bloch-card__link-word">Reduced </span>ρ
+          <span className="bloch-card__link-word">Reduced </span>
+          <span className="bloch-card__rho">ρ</span>
         </button>
       </header>
 

@@ -79,6 +79,12 @@
   cursor: pointer;
 }
 
+/* ρ in the mono face and a bit larger: at 11px Plex Sans it reads like a "p". */
+.bloch-card__rho {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+}
+
 .bloch-card__link:hover {
   background: var(--color-bg-hover);
 }

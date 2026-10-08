@@ -16,7 +16,8 @@ import type { Circuit } from '../model/types'
 import { readSavedCircuit, startAutosave, writeSavedCircuit } from './autosave'
 import { decodeCircuitHash, isCircuitHash } from './shareLink'
 
-export const SAVED_INVALID_MESSAGE = 'Saved circuit was invalid and was discarded.'
+export const SAVED_INVALID_MESSAGE =
+  'Saved circuit was invalid and was set aside; starting with a new circuit.'
 
 function clearHash(): void {
   try {

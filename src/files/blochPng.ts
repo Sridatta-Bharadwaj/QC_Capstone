@@ -127,9 +127,13 @@ export function blochCardText(q: QubitAnalysis): CardText {
   }
 }
 
-/** Title line of the image. */
-export function blochPngTitle(numQubits: number): string {
-  return `Bloch spheres · ${numQubits} ${numQubits === 1 ? 'qubit' : 'qubits'}`
+/**
+ * Title line of the image. `stepText` (e.g. "step 1 / 2 · after column 0") is added when the
+ * step debugger is not Live, so the image says which state it shows.
+ */
+export function blochPngTitle(numQubits: number, stepText: string | null = null): string {
+  const title = `Bloch spheres · ${numQubits} ${numQubits === 1 ? 'qubit' : 'qubits'}`
+  return stepText ? `${title} · ${stepText}` : title
 }
 
 /**

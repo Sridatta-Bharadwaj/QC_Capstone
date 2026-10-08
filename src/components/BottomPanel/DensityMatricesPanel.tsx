@@ -154,7 +154,11 @@ function SingleQubitDensityView({ keep }: { keep: number[] }) {
           </span>{' '}
           ({dim}×{dim})
         </h3>
-        {numQubits > MAX_DISPLAY_QUBITS ? (
+        {keep.length === numQubits ? (
+          <p className="teaching-note" data-testid="full-rho-same">
+            Every qubit is kept, so nothing is traced out: the reduced ρ above is the full ρ.
+          </p>
+        ) : numQubits > MAX_DISPLAY_QUBITS ? (
           <p className="teaching-note" data-testid="too-large">
             Full ρ is {dim}×{dim} — too large to display. The reduced ρ above is computed from it by
             the partial trace.

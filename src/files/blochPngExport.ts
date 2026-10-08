@@ -5,7 +5,10 @@
 // can be copied with drawImage. The axis labels are DOM spans over the canvas; their text,
 // colour and position on screen are redrawn with fillText. Colours and fonts are read from the
 // theme's CSS tokens, so the image matches the current theme.
+import { columnCount } from '../model/circuit'
+import { currentStep, useStepStore } from '../model/stepStore'
 import { useCircuitStore, useResultsStore } from '../model/store'
+import { describeStep } from '../components/Timeline/timelineText'
 import { useUiStore } from '../model/uiStore'
 import {
   blochCardText,
@@ -100,7 +103,12 @@ export async function exportBlochPng(): Promise<{ filename: string } | { error: 
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = color.text
   ctx.font = `600 13px ${ui}`
-  ctx.fillText(blochPngTitle(numQubits), layout.title.x, layout.title.y)
+  const steps = columnCount(useCircuitStore.getState().circuit)
+  const stepState = useStepStore.getState()
+  const stepText = stepState.live
+    ? null
+    : `step ${currentStep(stepState, steps)} / ${steps} · ${describeStep(currentStep(stepState, steps))}`
+  ctx.fillText(blochPngTitle(numQubits, stepText), layout.title.x, layout.title.y)
 
   layout.cards.forEach((place, i) => {
     const text = blochCardText(analysis.qubits[i])

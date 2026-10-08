@@ -10,6 +10,7 @@ import { CODE_TAB_LABELS, openCode } from '../components/CodePanel/codeSync'
 import { showNotice } from '../components/Notices/noticeStore'
 import { useUiStore } from '../model/uiStore'
 import { MAX_UPLOAD_BYTES, type CodeTab } from '../model/types'
+import { MAX_REPORTED_PROBLEMS } from '../parser/qasm'
 
 /** Extensions the picker offers (also the `accept` attribute of the file input). */
 export const OPEN_FILE_ACCEPT = '.qasm,.py,.txt'
@@ -120,9 +121,16 @@ export async function openCircuitFile(file: TextFile): Promise<void> {
   const { circuit, problems } = openCode(read.tab, read.text)
   const errors = problems.filter((p) => p.severity === 'error').length
   const warnings = problems.length - errors
+  // The parsers stop after MAX_REPORTED_PROBLEMS and add one "Stopped after…" error.
+  const errorText =
+    problems.length > MAX_REPORTED_PROBLEMS
+      ? `more than ${MAX_REPORTED_PROBLEMS} errors`
+      : errors === 1
+        ? '1 error'
+        : `${errors} errors`
   if (!circuit) {
     showNotice(
-      `"${name}" has ${errors === 1 ? '1 error' : `${errors} errors`} (see the Problems tab). ` +
+      `"${name}" has ${errorText} (see the Problems tab). ` +
         `It is in the ${label} tab; the circuit was not changed.`,
       { kind: 'warning' },
     )

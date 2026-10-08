@@ -13,6 +13,7 @@ import './styles/tokens.css'
 import './styles/global.css'
 
 import App from './App'
+import { installFileDropGuard } from './files/dropGuard'
 import { installHistoryShortcuts } from './history/shortcuts'
 import { initPersistence } from './persistence/startup'
 import { initTheme } from './theme/themeStore'
@@ -22,6 +23,8 @@ initTheme()
 // circuit), then start undo history and autosave.
 initPersistence()
 installHistoryShortcuts()
+// A file dropped outside the code panel is opened instead of replacing the page.
+installFileDropGuard()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

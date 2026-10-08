@@ -10,8 +10,10 @@ import {
   validateOperation,
 } from './circuit'
 import { findPreset } from './presets'
+import { MAX_COLUMN } from './validate'
 import {
   DEFAULT_QUBITS,
+  MAX_OPERATIONS,
   MAX_QUBITS,
   type ChangeSource,
   type Circuit,
@@ -79,6 +81,8 @@ export const useCircuitStore = create<CircuitState>((set, get) => ({
 
   addOperation: (op, source = 'canvas') => {
     const { circuit } = get()
+    // Backstop for the security limits (the canvas shows a hint before getting here).
+    if (circuit.operations.length >= MAX_OPERATIONS || op.column > MAX_COLUMN) return null
     if (validateOperation(op, circuit.numQubits) !== null) return null
     if (!isPlacementFree(circuit, op.column, op.qubits)) return null
     const id = newOperationId()
@@ -92,6 +96,7 @@ export const useCircuitStore = create<CircuitState>((set, get) => ({
     const current = circuit.operations.find((o) => o.id === id)
     if (!current) return false
     const updated: Operation = { ...current, ...patch, id }
+    if (updated.column > MAX_COLUMN) return false
     if (validateOperation(updated, circuit.numQubits) !== null) return false
     if (!isPlacementFree(circuit, updated.column, updated.qubits, id)) return false
     const next: Circuit = {

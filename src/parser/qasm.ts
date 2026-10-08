@@ -318,7 +318,8 @@ function levenshtein(a: string, b: string): number {
 /** Closest supported gate name, or null if nothing is reasonably close. */
 export function suggestGateName(name: string): string | null {
   const lower = name.toLowerCase()
-  if (lower in GATE_BY_NAME) return lower
+  // hasOwn, not `in`: 'constructor' must not match Object.prototype.
+  if (Object.hasOwn(GATE_BY_NAME, lower)) return lower
   const maxDistance = name.length <= 1 ? 0 : name.length <= 3 ? 1 : 2
   let best: string | null = null
   let bestDistance = Infinity

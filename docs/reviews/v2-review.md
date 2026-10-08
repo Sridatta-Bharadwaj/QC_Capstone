@@ -296,3 +296,28 @@ or were ignored in ≤ 26 ms, with no stack overflow.
 | Performance, 500-gate 6-qubit file (production build) | parsed, simulated and rendered in ≈ 260 ms. A palette click then gives long tasks of 114 ms + 67 ms; acceptable |
 
 Screenshots are in `D:\Sridatta\QC_Capstone\.playwright-mcp\review-*.png` (not committed).
+
+## Resolution (lead, branch `v2-fix-review`)
+
+| ID  | Outcome   | Change                                                                                                                                                                |
+| --- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | Fixed     | Canvas (`Canvas/actions.ts`) and store refuse gate 501 and columns > 1000 with a hint; invalid saved data is moved to `qc-capstone:circuit:v2:discarded`, not deleted |
+| R2  | Fixed     | `Layout/canvasFit.ts` refits on window resize (until the user drags the separator); checked 1440×900 → 1280×720 with 6 qubits: no canvas scroll                       |
+| R3  | Fixed     | Canvas section is focusable by click (`tabIndex=-1`); a timeline button that becomes disabled moves focus to the slider                                               |
+| R4  | Fixed     | Qiskit parser warns (once) for gates after a line that already uses the circuit, e.g. `Statevector(qc)`. `pi` without an import stays accepted (lenient on purpose)   |
+| R5  | Fixed     | `files/dropGuard.ts`: a file dropped anywhere outside the code panel is opened instead of replacing the page                                                          |
+| R6  | Fixed     | `validateCircuit` collapses runs of empty columns (leading ones removed, longer gaps shortened to one) via `collapseEmptyColumns`                                     |
+| R7  | Fixed     | README: v2 features, shortcuts, file formats, limits, verify numbers, "serve, don't open via file://"; screenshots refreshed; `docs/DEMO.md` added                    |
+| R8  | Fixed     | PNG title includes "step k / N · after column c" when not Live                                                                                                        |
+| R9  | Fixed     | `suggestGateName` uses `Object.hasOwn`                                                                                                                                |
+| R10 | Fixed     | File notice says "more than 200 errors" when the parser stopped early                                                                                                 |
+| R11 | Fixed     | ρ on the Bloch card button uses the mono face at 13px                                                                                                                 |
+| R12 | Fixed     | Keeping every qubit shows a note instead of a second copy of the full ρ                                                                                               |
+| R13 | Fixed     | Teaching toolbars show "Step k / N · …" while the debugger is not Live                                                                                                |
+| R14 | No change | Showing the previous result until the fresh one arrives is the app-wide rule (v1 decision), avoids flicker; mismatched kept sets are already never shown              |
+| R15 | No change | Deliberate (CONTEXT.md): undo regenerates the tab; Monaco's own Ctrl+Z brings the text back                                                                           |
+| R16 | No change | Both paths are safe; storage stays lenient so older saved data keeps loading                                                                                          |
+| R17 | Fixed     | Object URLs are revoked after 10 s                                                                                                                                    |
+| R18 | Open      | `THREE.Clock` deprecation warning comes from react-three-fiber internals; for the production-readiness pass                                                           |
+| R19 | Open      | `npm audit` low findings (dompurify via monaco-editor); for the security audit                                                                                        |
+| R20 | No change | The angle field commits on Enter/blur by design; the slider reflects committed values                                                                                 |
