@@ -253,6 +253,8 @@ describe('errors', () => {
     ['assignment', 'g = qc.h(0)', 5],
     ['call argument', 'print(qc.h(0))', 7],
     ['lambda', 'f = lambda: qc.x(0)', 13],
+    ['for loop (unknown method)', 'for k in range(2):\n    qc.hh(k)', 5],
+    ['assignment (unsupported method)', 'g = qc.reset(0)', 5],
   ])('gate call in a %s → straight-line error', (_name, code, column) => {
     const e = oneError(`${HEADER}${code}\n`)
     expect(e.message).toBe(STRAIGHT_LINE_MESSAGE)

@@ -114,14 +114,13 @@ const UNSUPPORTED_METHODS = words(`
   compose add_register delay global_phase if_test while_loop for_loop switch
 `)
 
-/** True for a method that changes the circuit (so it must not be hidden inside an expression). */
-function isMutatingMethod(name: string): boolean {
-  return (
-    GATE_BY_METHOD.has(name) ||
-    MEASURE_METHODS.has(name) ||
-    name === 'barrier' ||
-    UNSUPPORTED_METHODS.has(name)
-  )
+/**
+ * True for a method call that may change the circuit, so it must not be hidden inside a block
+ * or an expression. Everything except the known read-only methods counts: for an unknown
+ * method we can't tell, so we don't guess.
+ */
+function mayChangeCircuit(method: string): boolean {
+  return !READ_ONLY_METHODS.has(method)
 }
 
 /** Python keywords that start a compound statement (the line ends with ':' and a block follows). */
@@ -541,7 +540,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   const circuitName: string | null = creationStatement ? creationStatement.tokens[0].text : null
 
   /**
-   * First `<circuit>.<mutating method>(` anywhere inside these tokens. Returns the circuit
+   * First `<circuit>.<method>(` call that may change the circuit, anywhere inside these tokens. Returns the circuit
    * name token and the method token (the part to underline), or null.
    */
   function findMutatingCall(tokens: Token[]): { from: Token; to: Token } | null {
@@ -553,7 +552,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
         isOp(tokens[k + 1], '.') &&
         isName(tokens[k + 2]) &&
         isOp(tokens[k + 3], '(') &&
-        isMutatingMethod(tokens[k + 2].text)
+        mayChangeCircuit(tokens[k + 2].text)
       ) {
         return { from: tokens[k], to: tokens[k + 2] }
       }
