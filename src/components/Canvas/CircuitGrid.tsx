@@ -164,7 +164,12 @@ function StepMarker({ appliedColumn, height }: { appliedColumn: number; height: 
         <div
           className="circuit__step-band"
           data-testid="step-band"
-          style={{ left: appliedColumn * COL_W, width: COL_W, height }}
+          style={{
+            left: appliedColumn * COL_W,
+            top: RULER_H,
+            width: COL_W,
+            height: height - RULER_H,
+          }}
           aria-hidden="true"
         />
       )}
