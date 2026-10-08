@@ -7,7 +7,9 @@
 //     spans laid over the canvas (bundled IBM Plex font, nothing fetched), moved every frame to
 //     the screen position of their 3D anchor point.
 //   - the Bloch vector r as an arrow from the origin. |r| = 1 means a pure state (tip on the
-//     surface); |r| < 1 means a mixed state (tip inside). r ≈ 0 is maximally mixed: just a dot.
+//     surface); |r| < 1 means a mixed state (tip inside). r = 0 is maximally mixed: no arrow,
+//     a dot and an "r = 0" marker at the centre.
+//   - when r changes, the arrow glides to the new vector (~250 ms, see arrowAnimation.ts).
 //
 // Colours come from CSS tokens and are re-read whenever the theme changes.
 //
@@ -17,19 +19,20 @@
 // hairlines.
 import { Line, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef, type CSSProperties, type RefObject } from 'react'
-import { Quaternion, Vector3 } from 'three'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from 'react'
+import { Vector3, type Group, type Mesh } from 'three'
 import type { BlochVector } from '../../engine/types'
 import { useThemeStore, type Theme } from '../../theme/themeStore'
-import {
-  CAMERA_POSITION,
-  ZERO_VECTOR_THRESHOLD,
-  blochToThree,
-  latitudeCircle,
-  longitudeCircle,
-  vectorLength,
-  type Vec3,
-} from './coords'
+import { ArrowAnimator, arrowShape, prefersReducedMotion } from './arrowAnimation'
+import { CAMERA_POSITION, blochToThree, latitudeCircle, longitudeCircle, type Vec3 } from './coords'
 import './Bloch.css'
 
 interface SceneColors {
@@ -70,8 +73,6 @@ const ORIGIN: Vec3 = [0, 0, 0]
 const AXIS_LENGTH = 1.12
 const LABEL_OFFSET = 1.28
 
-const CONE_LENGTH = 0.2
-const CONE_RADIUS = 0.075
 /** Radius of the dot at the arrow tip (and of the centre dot when r = 0). */
 const TIP_RADIUS = 0.045
 
@@ -157,62 +158,84 @@ function LabelProjector({ spans }: { spans: RefObject<(HTMLSpanElement | null)[]
   return null
 }
 
+/** The shaft as a unit line along +Y; scaled to its length every frame. */
+const UNIT_SHAFT: Vec3[] = [ORIGIN, [0, 1, 0]]
+
 /**
- * Arrow from the origin to r: a shaft line plus a cone whose apex is exactly at r.
- * Everything is derived from `vector`, so animating the arrow only means passing an
- * interpolated vector each frame.
+ * Arrow from the origin to r: a shaft line, a cone whose apex is exactly at r, and a tip dot.
+ *
+ * The arrow is built once pointing along +Y and then, every frame, rotated and stretched to
+ * the vector on screen (no React re-render per frame). While a tween runs it asks for the
+ * next frame (`invalidate`), since the canvas only renders on demand.
+ * When |r| is ~0 the arrow is hidden and the centre dot + "r = 0" marker are shown.
  */
 function BlochArrow({
   vector,
   color,
   width,
+  onZeroChange,
 }: {
   vector: BlochVector
   color: string
   width: number
+  /** Called every frame with whether the arrow is hidden because |r| ≈ 0. */
+  onZeroChange: (isZero: boolean) => void
 }) {
-  const length = vectorLength(vector)
-  const geometry = useMemo(() => {
-    const tip = new Vector3(...blochToThree(vector))
-    const dir = tip.clone().normalize()
-    // Short vectors get a proportionally smaller cone so the head never overshoots the origin.
-    const coneLength = Math.min(CONE_LENGTH, length * 0.5)
-    const shaftEnd = dir.clone().multiplyScalar(length - coneLength)
-    const coneCenter = dir.clone().multiplyScalar(length - coneLength / 2)
-    // A cone geometry points along +Y; rotate +Y onto the arrow direction.
-    const rotation = new Quaternion().setFromUnitVectors(UP, dir)
-    return {
-      tip: tip.toArray() as Vec3,
-      shaftEnd: shaftEnd.toArray() as Vec3,
-      coneCenter: coneCenter.toArray() as Vec3,
-      rotation,
-      coneLength,
-    }
-  }, [vector, length])
+  const invalidate = useThree((s) => s.invalidate)
+  const [animator] = useState(() => new ArrowAnimator(vector))
+  const arrow = useRef<Group>(null)
+  const shaft = useRef<Group>(null)
+  const cone = useRef<Mesh>(null)
+  const tip = useRef<Mesh>(null)
+  const centreDot = useRef<Mesh>(null)
+  const direction = useMemo(() => new Vector3(), [])
 
-  if (length < ZERO_VECTOR_THRESHOLD) {
-    // Maximally mixed state: r = 0, nothing to point at.
-    return (
-      <mesh position={ORIGIN}>
+  // A new vector from the engine: start the tween and request a frame.
+  const { x, y, z } = vector
+  useEffect(() => {
+    animator.setTarget({ x, y, z }, performance.now(), prefersReducedMotion())
+    invalidate()
+  }, [animator, invalidate, x, y, z])
+
+  useFrame(() => {
+    const { vector: shown, animating } = animator.frame(performance.now())
+    const shape = arrowShape(shown)
+    if (arrow.current) arrow.current.visible = shape.visible
+    if (centreDot.current) centreDot.current.visible = !shape.visible
+    onZeroChange(!shape.visible)
+    if (shape.visible && arrow.current && shaft.current && cone.current && tip.current) {
+      // Rotate the +Y model onto the vector's direction, then size the parts along it.
+      direction.set(...shape.direction)
+      arrow.current.quaternion.setFromUnitVectors(UP, direction)
+      shaft.current.scale.set(1, shape.shaftLength, 1)
+      cone.current.position.set(0, shape.coneCenter, 0)
+      cone.current.scale.set(shape.coneRadius, shape.coneLength, shape.coneRadius)
+      tip.current.position.set(0, shape.length, 0)
+    }
+    if (animating) invalidate()
+  })
+
+  return (
+    <>
+      <group ref={arrow}>
+        <group ref={shaft}>
+          <Line points={UNIT_SHAFT} color={color} lineWidth={width} />
+        </group>
+        {/* Unit cone (radius 1, height 1, along +Y), scaled each frame. */}
+        <mesh ref={cone}>
+          <coneGeometry args={[1, 1, 20]} />
+          <meshBasicMaterial color={color} />
+        </mesh>
+        <mesh ref={tip}>
+          <sphereGeometry args={[TIP_RADIUS, 16, 12]} />
+          <meshBasicMaterial color={color} />
+        </mesh>
+      </group>
+      <mesh ref={centreDot} position={ORIGIN} visible={false}>
         <sphereGeometry args={[TIP_RADIUS * 1.4, 16, 12]} />
         <meshBasicMaterial color={color} />
       </mesh>
-    )
-  }
-
-  const coneRadius = CONE_RADIUS * (geometry.coneLength / CONE_LENGTH)
-  return (
-    <group>
-      <Line points={[ORIGIN, geometry.shaftEnd]} color={color} lineWidth={width} />
-      <mesh position={geometry.coneCenter} quaternion={geometry.rotation}>
-        <coneGeometry args={[coneRadius, geometry.coneLength, 20]} />
-        <meshBasicMaterial color={color} />
-      </mesh>
-      <mesh position={geometry.tip}>
-        <sphereGeometry args={[TIP_RADIUS, 16, 12]} />
-        <meshBasicMaterial color={color} />
-      </mesh>
-    </group>
+    </>
   )
 }
 
@@ -226,6 +249,12 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
   const theme = useThemeStore((s) => s.theme)
   const colors = useMemo(() => readSceneColors(theme), [theme])
   const labelSpans = useRef<(HTMLSpanElement | null)[]>([])
+  const zeroMarker = useRef<HTMLSpanElement>(null)
+  // Toggled from the render loop (no React re-render per frame).
+  const showZeroMarker = useCallback((isZero: boolean) => {
+    const el = zeroMarker.current
+    if (el) el.style.visibility = isZero ? 'visible' : 'hidden'
+  }, [])
   const k = strokeScale(size)
   const label = labelSize(size)
   const style = {
@@ -256,7 +285,12 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
         <Axis to={{ x: 0, y: AXIS_LENGTH, z: 0 }} color={colors.axisY} width={WIDTH.axis * k} />
         <Axis to={{ x: 0, y: 0, z: AXIS_LENGTH }} color={colors.axisZ} width={WIDTH.axis * k} />
 
-        <BlochArrow vector={vector} color={colors.vector} width={WIDTH.vector * k} />
+        <BlochArrow
+          vector={vector}
+          color={colors.vector}
+          width={WIDTH.vector * k}
+          onZeroChange={showZeroMarker}
+        />
         <LabelProjector spans={labelSpans} />
         <CameraZoom zoom={cameraZoom(size, label)} />
 
@@ -279,6 +313,11 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
           {label.text}
         </span>
       ))}
+      {/* Shown by BlochArrow when |r| ≈ 0. The origin always projects to the canvas centre
+          (the camera orbits around it), so CSS can place this without projecting. */}
+      <span ref={zeroMarker} className="bloch-label bloch-zero-marker">
+        r = 0
+      </span>
     </div>
   )
 }
