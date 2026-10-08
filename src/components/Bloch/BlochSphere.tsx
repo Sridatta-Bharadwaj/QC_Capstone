@@ -268,7 +268,9 @@ export function BlochSphere({ vector, size = 160 }: BlochSphereProps) {
       <Canvas
         frameloop="demand"
         dpr={[1, 2]}
-        gl={{ alpha: true, antialias: true }}
+        // preserveDrawingBuffer keeps the last frame readable, so "Download → Bloch spheres
+        // (.png)" can copy it (files/blochPngExport.ts). Cheap: the scene renders on demand.
+        gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
         camera={{ position: CAMERA_POSITION, fov: 30, near: 0.1, far: 20 }}
       >
         {/* Wireframe sphere */}

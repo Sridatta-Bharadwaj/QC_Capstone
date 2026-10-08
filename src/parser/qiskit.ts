@@ -42,7 +42,6 @@ import {
   GATES,
   MAX_OPERATIONS,
   MAX_QUBITS,
-  MAX_UPLOAD_BYTES,
   type GateType,
   type InitialState,
   type Operation,
@@ -57,18 +56,24 @@ import {
   type SourceComment,
   type Span,
 } from './prepBlock'
+import {
+  FINAL_MEASUREMENT_MESSAGE,
+  MAX_SOURCE_LENGTH,
+  TOO_MANY_GATES_MESSAGE,
+  gateAfterMeasurementMessage,
+  tooLongMessage,
+} from './messages'
 import { suggestGateName, type ParseOptions, type ParseResult } from './qasm'
 
 export type { ParseOptions, ParseResult }
 
 /** Longest source we read (characters). Same budget as an uploaded file. */
-export const MAX_QISKIT_SOURCE_LENGTH = MAX_UPLOAD_BYTES
+export const MAX_QISKIT_SOURCE_LENGTH = MAX_SOURCE_LENGTH
 
 export const STRAIGHT_LINE_MESSAGE =
   'Only straight-line Qiskit code is supported: write one gate call per line.'
 
-export const FINAL_MEASUREMENT_MESSAGE =
-  'Final measurements ignored: showing the state just before measurement'
+export { FINAL_MEASUREMENT_MESSAGE }
 
 // ---------------------------------------------------------------------------
 // Method names
@@ -499,10 +504,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
 
   // Hard size limit first: we never even tokenize huge input.
   if (source.length > MAX_QISKIT_SOURCE_LENGTH) {
-    errorAtStart(
-      `The code is too long (${Math.ceil(source.length / 1024)} KB); the limit is ` +
-        `${MAX_QISKIT_SOURCE_LENGTH / 1024} KB.`,
-    )
+    errorAtStart(tooLongMessage(source.length))
     return { circuit: null, problems }
   }
 
@@ -806,12 +808,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
     for (const q of qubits) {
       const at = measured.get(q)
       if (at) {
-        error(
-          `Gate after a measurement: qubit ${q} was measured on line ${at.line}. ` +
-            'Only final measurements are supported (they are ignored).',
-          from,
-          to,
-        )
+        error(gateAfterMeasurementMessage(String(q), at.line), from, to)
         return false
       }
     }
@@ -821,7 +818,7 @@ export function parseQiskit(source: string, options: ParseOptions = {}): ParseRe
   /** Adds a gate call, enforcing the operation limit. */
   function addCall(call: GateCall) {
     if (calls.length >= MAX_OPERATIONS) {
-      error(`Too many gates: a circuit can have at most ${MAX_OPERATIONS}.`, call.first, call.last)
+      error(TOO_MANY_GATES_MESSAGE, call.first, call.last)
       tooManyGates = true
       return
     }
