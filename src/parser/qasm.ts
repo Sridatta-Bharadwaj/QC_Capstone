@@ -1279,9 +1279,6 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
 
     // --- optional `(angles)` ---
     const angles: number[] = []
-    let paramCount = 0
-    let paramsFrom = nameToken
-    let paramsTo = nameToken
     if (isSymbol(peek(), '(')) {
       const read = readParams()
       if (!read) {
@@ -1289,11 +1286,8 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
         return
       }
       last = read.close
-      paramsFrom = read.open
-      paramsTo = read.close
       const groups = read.groups.length === 1 && read.groups[0].length === 0 ? [] : read.groups
-      paramCount = groups.length
-      if (checkParamCount(callee, nameToken, paramCount, read.open, read.close)) {
+      if (checkParamCount(callee, nameToken, groups.length, read.open, read.close)) {
         for (const group of groups) {
           if (group.length === 0) {
             error('Empty parameter.', read.open, read.close)
@@ -1309,7 +1303,7 @@ export function parseQasm(source: string, options: ParseOptions = {}): ParseResu
         }
       }
     } else {
-      checkParamCount(callee, nameToken, 0, paramsFrom, paramsTo)
+      checkParamCount(callee, nameToken, 0, nameToken, nameToken)
     }
 
     // --- qubit arguments ---
