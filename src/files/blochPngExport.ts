@@ -33,7 +33,13 @@ function liveSpheres(numQubits: number): HTMLElement[] | null {
   const spheres = [...document.querySelectorAll<HTMLElement>('.bloch-panel .bloch-sphere')]
   const ready =
     spheres.length === numQubits &&
-    spheres.every((s) => s.querySelector('canvas')) &&
+    // A sphere has drawn its first frame once its axis labels were placed (made visible by
+    // the label projector after a rendered frame); a canvas alone may still be blank.
+    spheres.every(
+      (s) =>
+        s.querySelector('canvas') &&
+        s.querySelector<HTMLElement>('.bloch-label')?.style.visibility === 'visible',
+    ) &&
     !useResultsStore.getState().computing
   return ready ? spheres : null
 }
