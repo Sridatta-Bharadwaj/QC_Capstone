@@ -12,8 +12,8 @@ import { ROW_H, RULER_H } from '../Canvas/CircuitGrid'
 /** Top row share of the main column, as fractions. MAX is also the default size. */
 export const MIN_TOP_SHARE = 0.35
 export const MAX_TOP_SHARE = 0.55
-/** `.circuit` padding-bottom (Canvas.css). */
-const CIRCUIT_PAD_BOTTOM = 8
+/** `.circuit` padding-bottom (Canvas.css): 0 since the timeline bar (V2-5) needed the room. */
+const CIRCUIT_PAD_BOTTOM = 0
 /** Room under the last wire: the empty-canvas hint (two lines) or the gate inspector. */
 const SLACK = 52
 

@@ -22,6 +22,11 @@ interface CircuitGridProps {
   selectedQubit: number | null
   /** Id of the gate currently being dragged (drawn faded at its old place). */
   draggingOpId: string | null
+  /**
+   * Step-through debugger (V2-5): the step on screen, or null while Live. At step k the
+   * column just applied (k − 1) is highlighted and later columns are dimmed.
+   */
+  activeStep?: number | null
   /** Where the dragged gate would land, for the drop highlight. */
   dropPreview: { plan: DropPlan; cell: DropCell } | null
   onSelectOp: (id: string | null) => void
@@ -33,10 +38,13 @@ export function CircuitGrid(props: CircuitGridProps) {
   const n = circuit.numQubits
   const qubits = Array.from({ length: n }, (_, q) => q)
   const columnIndices = Array.from({ length: columns }, (_, c) => c)
+  const activeStep = props.activeStep ?? null
+  // Column applied last at this step: step k = after columns 0..k−1. −1 at the start state.
+  const appliedColumn = activeStep === null ? null : activeStep - 1
 
   return (
     <div
-      className="circuit"
+      className={`circuit${appliedColumn !== null ? ' circuit--stepping' : ''}`}
       style={{ width: LABEL_W + columns * COL_W, height: RULER_H + n * ROW_H }}
     >
       <div className="circuit__labels" style={{ width: LABEL_W, paddingTop: RULER_H }}>
@@ -60,11 +68,19 @@ export function CircuitGrid(props: CircuitGridProps) {
       <div className="circuit__body" style={{ width: columns * COL_W }}>
         <div className="circuit__ruler" style={{ height: RULER_H }} aria-hidden="true">
           {columnIndices.map((c) => (
-            <span key={c} style={{ width: COL_W }}>
+            <span
+              key={c}
+              style={{ width: COL_W }}
+              className={c === appliedColumn ? 'circuit__ruler-current' : undefined}
+            >
               {c}
             </span>
           ))}
         </div>
+
+        {appliedColumn !== null && (
+          <StepMarker appliedColumn={appliedColumn} height={RULER_H + n * ROW_H} />
+        )}
 
         {qubits.map((q) => (
           <div
@@ -89,6 +105,15 @@ export function CircuitGrid(props: CircuitGridProps) {
             op={op}
             selected={op.id === props.selectedOpId}
             dragging={op.id === props.draggingOpId}
+            stepState={
+              appliedColumn === null
+                ? null
+                : op.column === appliedColumn
+                  ? 'current'
+                  : op.column > appliedColumn
+                    ? 'future'
+                    : 'past'
+            }
             onSelect={() => props.onSelectOp(op.id)}
           />
         ))}
@@ -129,14 +154,46 @@ function DropHighlight({ plan, cell }: { plan: DropPlan; cell: DropCell }) {
   )
 }
 
+/**
+ * Debugger playhead: a tinted band over the column just applied and a line after it, so
+ * everything left of the line has happened. At step 0 only the line is drawn, at the left edge.
+ */
+function StepMarker({ appliedColumn, height }: { appliedColumn: number; height: number }) {
+  return (
+    <>
+      {appliedColumn >= 0 && (
+        <div
+          className="circuit__step-band"
+          data-testid="step-band"
+          style={{
+            left: appliedColumn * COL_W,
+            top: RULER_H,
+            width: COL_W,
+            height: height - RULER_H,
+          }}
+          aria-hidden="true"
+        />
+      )}
+      <div
+        className="circuit__step-line"
+        data-testid="step-line"
+        style={{ left: (appliedColumn + 1) * COL_W, height }}
+        aria-hidden="true"
+      />
+    </>
+  )
+}
+
 interface GateViewProps {
   op: Operation
   selected: boolean
   dragging: boolean
+  /** Debugger: applied before this step, the one just applied, or not yet applied. */
+  stepState: 'past' | 'current' | 'future' | null
   onSelect: () => void
 }
 
-function GateView({ op, selected, dragging, onSelect }: GateViewProps) {
+function GateView({ op, selected, dragging, stepState, onSelect }: GateViewProps) {
   const info = GATES[op.gate]
   const { min, max } = occupiedSpan(op.qubits)
   const parts = gateParts(op.gate)
@@ -150,6 +207,8 @@ function GateView({ op, selected, dragging, onSelect }: GateViewProps) {
     'gate',
     selected ? 'gate--selected' : '',
     dragging ? 'gate--dragging' : '',
+    stepState === 'current' ? 'gate--step-current' : '',
+    stepState === 'future' ? 'gate--step-future' : '',
     op.qubits.length > 1 ? 'gate--multi' : '',
   ]
     .filter(Boolean)
