@@ -7,6 +7,7 @@ import { CircuitDndProvider } from '../../src/components/Canvas/CircuitDndProvid
 import { useCanvasStore } from '../../src/components/Canvas/canvasStore'
 import { useCircuitStore } from '../../src/model/store'
 import { MAX_QUBITS, type Circuit } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 const initialCircuit = useCircuitStore.getState()
 const initialCanvas = useCanvasStore.getState()
@@ -56,12 +57,20 @@ describe('CanvasView toolbar', () => {
     renderCanvas()
     expect(screen.getByTestId('canvas-empty')).toHaveTextContent('pick a preset')
     cleanup()
-    renderCanvas({ numQubits: 2, operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }] })
+    renderCanvas({
+      numQubits: 2,
+      initialStates: defaultInitialStates(2),
+      operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }],
+    })
     expect(screen.queryByTestId('canvas-empty')).not.toBeInTheDocument()
   })
 
   it('clears all gates', () => {
-    renderCanvas({ numQubits: 2, operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }] })
+    renderCanvas({
+      numQubits: 2,
+      initialStates: defaultInitialStates(2),
+      operations: [{ id: 'h', gate: 'H', column: 0, qubits: [0] }],
+    })
     expect(screen.queryByTestId('canvas-empty')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }))
     expect(screen.getByTestId('canvas-empty')).toBeInTheDocument()
@@ -81,12 +90,14 @@ describe('CanvasView toolbar', () => {
 describe('CanvasView gates and inspector', () => {
   const rx: Circuit = {
     numQubits: 2,
+    initialStates: defaultInitialStates(2),
     operations: [{ id: 'rx', gate: 'RX', column: 0, qubits: [0], angle: Math.PI / 2 }],
   }
 
   it('draws controls and targets for multi-qubit gates', () => {
     renderCanvas({
       numQubits: 3,
+      initialStates: defaultInitialStates(3),
       operations: [{ id: 'cx', gate: 'CX', column: 1, qubits: [2, 0] }],
     })
     expect(screen.getByRole('button', { name: 'CX control on q2, column 1' })).toBeInTheDocument()
@@ -148,7 +159,11 @@ describe('CanvasView gates and inspector', () => {
 
   it('re-targets qubits, swapping roles when needed', () => {
     renderCanvas(
-      { numQubits: 3, operations: [{ id: 'cx', gate: 'CX', column: 0, qubits: [0, 1] }] },
+      {
+        numQubits: 3,
+        initialStates: defaultInitialStates(3),
+        operations: [{ id: 'cx', gate: 'CX', column: 0, qubits: [0, 1] }],
+      },
       'cx',
     )
     fireEvent.change(screen.getByRole('combobox', { name: 'Target' }), { target: { value: '2' } })
@@ -195,7 +210,7 @@ describe('CanvasView scrolling', () => {
   it('scrolls a newly placed (selected) gate into view', () => {
     const scrollIntoView = vi.fn()
     HTMLElement.prototype.scrollIntoView = scrollIntoView
-    renderCanvas({ numQubits: 1, operations: [] })
+    renderCanvas({ numQubits: 1, initialStates: defaultInitialStates(1), operations: [] })
     act(() => {
       appendGate('H')
     })

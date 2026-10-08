@@ -2,7 +2,12 @@
 import { describe, expect, it } from 'vitest'
 import { toQasm } from '../../src/codegen'
 import { simulate } from '../../src/engine'
-import { earliestFreeColumn, isPlacementFree, sortedOperations } from '../../src/model/circuit'
+import {
+  defaultInitialStates,
+  earliestFreeColumn,
+  isPlacementFree,
+  sortedOperations,
+} from '../../src/model/circuit'
 import { PRESETS } from '../../src/model/presets'
 import { GATE_TYPES, GATES, type Circuit, type Operation } from '../../src/model/types'
 import { parseQasm } from '../../src/parser/qasm'
@@ -69,7 +74,11 @@ function expectSameState(a: Circuit, b: Circuit) {
  * columns, so there can be gaps and gates that could have gone earlier.
  */
 function randomCanvasCircuit(rand: () => number, numQubits: number, gates: number): Circuit {
-  const circuit: Circuit = { numQubits, operations: [] }
+  const circuit: Circuit = {
+    numQubits,
+    initialStates: defaultInitialStates(numQubits),
+    operations: [],
+  }
   const usable = GATE_TYPES.filter((g) => GATES[g].arity <= numQubits)
   let id = 0
   for (let k = 0; k < gates; k++) {
@@ -100,7 +109,11 @@ function randomCanvasCircuit(rand: () => number, numQubits: number, gates: numbe
 
 /** Same gates, but packed the way the parser places them (written order = time order). */
 function packed(circuit: Circuit): Circuit {
-  const out: Circuit = { numQubits: circuit.numQubits, operations: [] }
+  const out: Circuit = {
+    numQubits: circuit.numQubits,
+    initialStates: defaultInitialStates(circuit.numQubits),
+    operations: [],
+  }
   for (const op of sortedOperations(circuit))
     out.operations.push({ ...op, column: earliestFreeColumn(out, op.qubits) })
   return out

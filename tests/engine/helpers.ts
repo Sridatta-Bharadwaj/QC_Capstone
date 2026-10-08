@@ -2,6 +2,7 @@
 import { expect } from 'vitest'
 import type { BlochVector, ComplexMatrix, StateVector } from '../../src/engine'
 import type { Circuit, GateType } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 export const EPS = 1e-10
 
@@ -11,6 +12,7 @@ type Step = [gate: GateType, column: number, qubits: number[], angle?: number]
 export function circuit(numQubits: number, ...steps: Step[]): Circuit {
   return {
     numQubits,
+    initialStates: defaultInitialStates(numQubits),
     operations: steps.map(([gate, column, qubits, angle], i) => ({
       id: `t${i}`,
       gate,

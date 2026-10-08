@@ -5,6 +5,7 @@ import type { CodeEditorProps } from '../../src/components/CodePanel/CodeEditor'
 import { CodePanel } from '../../src/components/CodePanel/CodePanel'
 import { useCircuitStore } from '../../src/model/store'
 import { useUiStore } from '../../src/model/uiStore'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 // The real editor pulls in Monaco (needs a real browser). Replace the lazy module with a stub
 // whose import we resolve by hand, so the test can see the Suspense fallback first.
@@ -30,7 +31,12 @@ describe('CodePanel', () => {
     useCircuitStore.getState().loadPreset('bell')
   })
   afterEach(() => {
-    useCircuitStore.getState().setCircuit({ numQubits: 2, operations: [] }, 'canvas')
+    useCircuitStore
+      .getState()
+      .setCircuit(
+        { numQubits: 2, initialStates: defaultInitialStates(2), operations: [] },
+        'canvas',
+      )
   })
 
   it('shows a code skeleton until the lazy editor loads, then generated code', async () => {

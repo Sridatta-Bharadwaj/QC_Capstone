@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { qiskitStatement, toQiskit } from '../../src/codegen'
 import { PRESETS } from '../../src/model/presets'
 import { GATE_TYPES, type Circuit, type GateType, type Operation } from '../../src/model/types'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 let nextId = 0
 function op(gate: GateType, column: number, qubits: number[], angle?: number): Operation {
@@ -65,6 +66,7 @@ describe('toQiskit', () => {
   it('matches the documented example', () => {
     const circuit: Circuit = {
       numQubits: 2,
+      initialStates: defaultInitialStates(2),
       operations: [op('CX', 1, [0, 1]), op('RX', 2, [1], Math.PI / 2), op('H', 0, [0])],
     }
     expect(toQiskit(circuit)).toBe(
@@ -76,7 +78,7 @@ describe('toQiskit', () => {
   })
 
   it('handles an empty circuit', () => {
-    expect(toQiskit({ numQubits: 3, operations: [] })).toBe(
+    expect(toQiskit({ numQubits: 3, initialStates: defaultInitialStates(3), operations: [] })).toBe(
       IMPORTS + 'qc = QuantumCircuit(3)\n' + TRACE,
     )
   })
@@ -84,6 +86,7 @@ describe('toQiskit', () => {
   it('orders by column, then by lowest qubit within a column', () => {
     const circuit: Circuit = {
       numQubits: 3,
+      initialStates: defaultInitialStates(3),
       operations: [op('CZ', 1, [2, 1]), op('X', 0, [2]), op('H', 0, [0]), op('T', 1, [0])],
     }
     expect(toQiskit(circuit)).toBe(
@@ -92,7 +95,13 @@ describe('toQiskit', () => {
   })
 
   it('uses DensityMatrix for a 1-qubit circuit (nothing to trace out)', () => {
-    expect(toQiskit({ numQubits: 1, operations: [op('H', 0, [0])] })).toBe(
+    expect(
+      toQiskit({
+        numQubits: 1,
+        initialStates: defaultInitialStates(1),
+        operations: [op('H', 0, [0])],
+      }),
+    ).toBe(
       'from qiskit import QuantumCircuit\n' +
         'from qiskit.quantum_info import DensityMatrix, Statevector\n\n' +
         'qc = QuantumCircuit(1)\nqc.h(0)\n\n' +
@@ -103,12 +112,23 @@ describe('toQiskit', () => {
   })
 
   it('imports pi only when an angle uses it', () => {
-    const rx = (angle: number) => toQiskit({ numQubits: 2, operations: [op('RX', 0, [0], angle)] })
+    const rx = (angle: number) =>
+      toQiskit({
+        numQubits: 2,
+        initialStates: defaultInitialStates(2),
+        operations: [op('RX', 0, [0], angle)],
+      })
     expect(rx(Math.PI / 2).startsWith(PI_IMPORT + 'from qiskit import')).toBe(true)
     expect(rx(-Math.PI).startsWith(PI_IMPORT)).toBe(true)
     expect(rx(0.25)).not.toContain('from math import pi')
     expect(rx(0.25).startsWith(IMPORTS)).toBe(true)
-    expect(toQiskit({ numQubits: 2, operations: [op('H', 0, [0])] })).not.toContain('math')
+    expect(
+      toQiskit({
+        numQubits: 2,
+        initialStates: defaultInitialStates(2),
+        operations: [op('H', 0, [0])],
+      }),
+    ).not.toContain('math')
   })
 
   it('handles a 6-qubit circuit', () => {
@@ -117,7 +137,7 @@ describe('toQiskit', () => {
       ...[1, 2, 3, 4, 5].map((t) => op('CX', t, [t - 1, t])),
       op('CCX', 6, [0, 5, 3]),
     ]
-    expect(toQiskit({ numQubits: 6, operations })).toBe(
+    expect(toQiskit({ numQubits: 6, initialStates: defaultInitialStates(6), operations })).toBe(
       IMPORTS +
         'qc = QuantumCircuit(6)\nqc.h(0)\nqc.cx(0, 1)\nqc.cx(1, 2)\nqc.cx(2, 3)\nqc.cx(3, 4)\n' +
         'qc.cx(4, 5)\nqc.ccx(0, 5, 3)\n' +

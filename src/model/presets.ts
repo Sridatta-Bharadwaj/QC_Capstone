@@ -1,5 +1,6 @@
 // Preset circuits shown in the sidebar.
-import type { Circuit, GateType } from './types'
+import { defaultInitialStates } from './circuit'
+import type { Circuit, GateType, InitialState } from './types'
 
 export interface Preset {
   id: string
@@ -11,9 +12,15 @@ export interface Preset {
 
 type Step = [gate: GateType, column: number, qubits: number[], angle?: number]
 
-function build(id: string, numQubits: number, steps: Step[]): Circuit {
+function build(
+  id: string,
+  numQubits: number,
+  steps: Step[],
+  initialStates: InitialState[] = defaultInitialStates(numQubits),
+): Circuit {
   return {
     numQubits,
+    initialStates,
     operations: steps.map(([gate, column, qubits, angle], i) => ({
       id: `${id}-${i}`,
       gate,

@@ -1,7 +1,7 @@
 // Two-way sync between the QASM editor text and the circuit model (PLAN.md → Sync rules).
 //
 //  - Editor edit → text is stored as typed → after 300 ms of no typing it is parsed.
-//      valid   → circuit store updated with source 'editor' (canvas + math follow);
+//      valid   → circuit store updated with source 'qasm' (canvas + math follow);
 //                the editor text is NOT regenerated, so the cursor and comments stay put.
 //      invalid → circuit store untouched (last valid circuit stays), problems are shown.
 //  - Canvas / preset change → the text is regenerated from the model with toQasm
@@ -51,7 +51,7 @@ export function applyQasm(text: string): void {
   useProblemsStore.getState().setProblems(problems)
   // Skip no-op updates (e.g. only whitespace or a comment changed) to avoid needless recomputes.
   if (circuit && !circuitsEqual(circuit, current)) {
-    useCircuitStore.getState().setCircuit(circuit, 'editor')
+    useCircuitStore.getState().setCircuit(circuit, 'qasm')
   }
 }
 
@@ -72,7 +72,7 @@ export function hasPendingParse(): boolean {
 
 // Model → text, for every change that did not come from the editor itself.
 useCircuitStore.subscribe((state, prev) => {
-  if (state.revision === prev.revision || state.lastSource === 'editor') return
+  if (state.revision === prev.revision || state.lastSource === 'qasm') return
   // Is text with errors about to be overwritten? Either its errors are already shown, or it
   // was typed less than PARSE_DEBOUNCE_MS ago and would fail to parse.
   const hasError = (problems: Problem[]) => problems.some((p) => p.severity === 'error')

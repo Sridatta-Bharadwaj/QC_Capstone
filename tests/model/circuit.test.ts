@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   columnCount,
+  defaultInitialStates,
   earliestFreeColumn,
   isPlacementFree,
   sortedOperations,
@@ -10,6 +11,7 @@ import type { Circuit } from '../../src/model/types'
 
 const circuit: Circuit = {
   numQubits: 3,
+  initialStates: defaultInitialStates(3),
   operations: [
     { id: 'a', gate: 'H', column: 0, qubits: [0] },
     { id: 'b', gate: 'CX', column: 1, qubits: [0, 2] },
@@ -25,7 +27,7 @@ describe('placement', () => {
 
   it('auto-places after the last gate touching the span', () => {
     expect(earliestFreeColumn(circuit, [1])).toBe(2)
-    expect(earliestFreeColumn({ numQubits: 3, operations: [circuit.operations[0]] }, [1])).toBe(0)
+    expect(earliestFreeColumn({ operations: [circuit.operations[0]] }, [1])).toBe(0)
   })
 
   it('counts columns and sorts in time order', () => {

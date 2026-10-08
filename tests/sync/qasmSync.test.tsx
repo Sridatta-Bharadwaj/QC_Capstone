@@ -14,6 +14,7 @@ import { StatusBar } from '../../src/components/StatusBar/StatusBar'
 import { useRevealStore } from '../../src/components/CodePanel/revealStore'
 import { useCircuitStore, useProblemsStore, useResultsStore } from '../../src/model/store'
 import { useUiStore } from '../../src/model/uiStore'
+import { defaultInitialStates } from '../../src/model/circuit'
 
 vi.mock('../../src/components/CodePanel/CodeEditor', () => ({
   default: (props: CodeEditorProps) => (
@@ -59,7 +60,12 @@ beforeEach(() => {
     useUiStore.setState({ codeTab: 'qasm' })
     useRevealStore.getState().clear()
     useResultsStore.getState().setError(null)
-    useCircuitStore.getState().setCircuit({ numQubits: 2, operations: [] }, 'canvas')
+    useCircuitStore
+      .getState()
+      .setCircuit(
+        { numQubits: 2, initialStates: defaultInitialStates(2), operations: [] },
+        'canvas',
+      )
   })
   vi.useFakeTimers()
 })
@@ -80,7 +86,7 @@ describe('editor → circuit', () => {
     expect(hasPendingParse()).toBe(true)
 
     advance(1)
-    expect(useCircuitStore.getState().lastSource).toBe('editor')
+    expect(useCircuitStore.getState().lastSource).toBe('qasm')
     expect(gates()).toEqual([
       ['H', 0, [0]],
       ['CX', 1, [0, 1]],

@@ -11,8 +11,8 @@
 //
 // We never build the full 2ⁿ×2ⁿ gate matrices. A gate only touches a few
 // qubits, so we update the amplitudes in place, which is O(2ⁿ) per gate.
-import { sortedOperations, validateOperation } from '../model/circuit'
-import type { Circuit, Operation } from '../model/types'
+import { columnCount, sortedOperations, validateOperation } from '../model/circuit'
+import type { Circuit, InitialState, Operation } from '../model/types'
 import { add, complex, mul } from './complex'
 import { FIXED_GATES, rotationGate } from './gates'
 import type { Complex, ComplexMatrix, StateVector } from './types'
@@ -32,6 +32,44 @@ export function zeroState(numQubits: number): StateVector {
   const state: StateVector = new Array(1 << numQubits)
   for (let i = 0; i < state.length; i++) state[i] = complex(0)
   state[0] = complex(1)
+  return state
+}
+
+const R = Math.SQRT1_2 // 1/√2
+
+/**
+ * Amplitudes [α, β] of each start state α|0⟩ + β|1⟩.
+ * |±⟩ = (|0⟩ ± |1⟩)/√2 lie on the ±x axis, |±i⟩ = (|0⟩ ± i|1⟩)/√2 on the ±y axis.
+ */
+export const INITIAL_STATE_VECTORS: Record<InitialState, [Complex, Complex]> = {
+  '0': [complex(1), complex(0)],
+  '1': [complex(0), complex(1)],
+  '+': [complex(R), complex(R)],
+  '-': [complex(R), complex(-R)],
+  i: [complex(R), complex(0, R)],
+  '-i': [complex(R), complex(0, -R)],
+}
+
+/**
+ * The product state |s0⟩ ⊗ |s1⟩ ⊗ … ⊗ |s(n−1)⟩.
+ *
+ * WHY A PRODUCT: the wires start independent (not entangled), so the amplitude of a
+ * basis state |b0 b1 … ⟩ is just the product of each qubit's own amplitude for its bit:
+ *   ψ(b0 b1 …) = v0[b0] · v1[b1] · …
+ * With every state '0' this is |0…0⟩ (amplitude 1 on index 0), the v1 start state.
+ */
+export function productState(initialStates: readonly InitialState[]): StateVector {
+  const n = initialStates.length
+  const state: StateVector = new Array(1 << n)
+  for (let i = 0; i < state.length; i++) {
+    let amp = complex(1)
+    for (let k = 0; k < n; k++) {
+      const v = INITIAL_STATE_VECTORS[initialStates[k]]
+      if (!v) throw new Error(`Unknown initial state "${String(initialStates[k])}"`)
+      amp = mul(amp, v[bitOf(i, n, k)])
+    }
+    state[i] = amp
+  }
   return state
 }
 
@@ -132,18 +170,49 @@ function applyOperation(state: StateVector, numQubits: number, op: Operation): v
   }
 }
 
+/** The start state of a circuit: the product of its initial states (checked against numQubits). */
+function startState(circuit: Circuit): StateVector {
+  const n = circuit.numQubits
+  if (!Number.isInteger(n) || n < 1) throw new Error(`Invalid qubit count ${n}`)
+  if (circuit.initialStates.length !== n) {
+    throw new Error(`Expected ${n} initial states, got ${circuit.initialStates.length}`)
+  }
+  return productState(circuit.initialStates)
+}
+
+function applyChecked(state: StateVector, n: number, op: Operation): void {
+  const problem = validateOperation(op, n)
+  if (problem) throw new Error(problem)
+  applyOperation(state, n, op)
+}
+
 /**
- * simulate(circuit): start in |0…0⟩ and apply every gate in time (column) order.
+ * simulate(circuit): start in the product state given by `initialStates` (|0…0⟩ by
+ * default) and apply every gate in time (column) order.
  * Throws if an operation is invalid (unknown gate, qubit out of range, missing angle).
  */
 export function simulate(circuit: Circuit): StateVector {
-  const n = circuit.numQubits
-  if (!Number.isInteger(n) || n < 1) throw new Error(`Invalid qubit count ${n}`)
-  const state = zeroState(n)
-  for (const op of sortedOperations(circuit)) {
-    const problem = validateOperation(op, n)
-    if (problem) throw new Error(problem)
-    applyOperation(state, n, op)
-  }
+  const state = startState(circuit)
+  for (const op of sortedOperations(circuit)) applyChecked(state, circuit.numQubits, op)
   return state
+}
+
+/**
+ * The statevector after each column, for the step-through debugger.
+ * Result length = columnCount + 1:
+ *   states[0]     = the start state (before any gate),
+ *   states[c + 1] = the state after every gate in columns 0..c.
+ * So the last entry equals simulate(circuit). Empty columns repeat the previous state.
+ */
+export function simulateColumns(circuit: Circuit): StateVector[] {
+  const n = circuit.numQubits
+  const state = startState(circuit)
+  const states: StateVector[] = [state.slice()]
+  const ops = sortedOperations(circuit)
+  let next = 0
+  for (let column = 0; column < columnCount(circuit); column++) {
+    while (next < ops.length && ops[next].column === column) applyChecked(state, n, ops[next++])
+    states.push(state.slice())
+  }
+  return states
 }

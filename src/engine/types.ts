@@ -76,3 +76,46 @@ export interface PartialTraceResult {
   /** The 2×2 reduced density matrix (equals the direct method's result). */
   reduced: ComplexMatrix
 }
+
+/**
+ * The state after one step of the circuit (step-through debugger, V2-5).
+ * step 0 = the start state (afterColumn = −1); step c + 1 = after every gate in columns 0..c.
+ * Contains the statevector too, so the teaching views can run the explicit trace at that step.
+ */
+export interface StepResult extends CircuitAnalysis {
+  step: number
+  /** Last column applied; −1 for the start state. */
+  afterColumn: number
+}
+
+/**
+ * One entry ρ_keep[row][col] of a subset-reduced density matrix, as a sum of full-ρ entries
+ * (generalises TraceEntry from one kept qubit to any set).
+ * `row` / `col` are basis indices over the KEPT qubits, big-endian in ascending qubit order.
+ */
+export interface SubsetTraceEntry {
+  row: number
+  col: number
+  terms: TraceTerm[]
+  sum: Complex
+}
+
+/** Keep-any-subset partial trace (V2-7). */
+export interface SubsetTraceResult {
+  numQubits: number
+  /** Kept qubits, sorted ascending, distinct. Their order defines the basis of `reduced`. */
+  keep: number[]
+  /** 2^k × 2^k reduced density matrix, k = keep.length. */
+  reduced: ComplexMatrix
+  /** Tr(ρ²): 1 = pure, 1/2^k = maximally mixed. */
+  purity: number
+  /** Von Neumann entropy S(ρ) = −Σ λ log₂ λ, in bits. 0 = pure. */
+  entropy: number
+  /**
+   * Explicit textbook steps (one per reduced entry, row-major), only when requested and
+   * small enough to show; null otherwise.
+   */
+  entries: SubsetTraceEntry[] | null
+  /** Full 2ⁿ×2ⁿ ρ when `entries` is present (Density Matrices tab), else null. */
+  fullRho: ComplexMatrix | null
+}
