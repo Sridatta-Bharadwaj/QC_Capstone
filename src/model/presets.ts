@@ -42,6 +42,24 @@ export const PRESETS: Preset[] = [
     circuit: build('plus', 1, [['H', 0, [0]]]),
   },
   {
+    id: 'minus-h',
+    name: '|−⟩ through H',
+    description:
+      'The wire starts in |−⟩ (−x). H swaps the x and z axes, so H|−⟩ = |1⟩: the vector ends on −z.',
+    // Start state |−⟩ = (|0⟩ − |1⟩)/√2 (set by the picker, no gate). H|−⟩ = |1⟩ because
+    // H maps |+⟩ ↔ |0⟩ and |−⟩ ↔ |1⟩.
+    circuit: build('minus-h', 1, [['H', 0, [0]]], ['-']),
+  },
+  {
+    id: 'kickback',
+    name: 'Phase kickback',
+    description:
+      'Start in |+⟩|−⟩, apply CX. The target is unchanged, but the control flips from +x to −x: no entanglement, the phase "kicks back".',
+    // CX|x⟩|−⟩ = (−1)^x |x⟩|−⟩ because X|−⟩ = −|−⟩. On |+⟩ = (|0⟩ + |1⟩)/√2 the sign lands on
+    // the |1⟩ part of the control: (|0⟩ − |1⟩)/√2 = |−⟩. Result |−⟩|−⟩, a product state.
+    circuit: build('kickback', 2, [['CX', 0, [0, 1]]], ['+', '-']),
+  },
+  {
     id: 'product',
     name: 'Product state |+⟩|1⟩|i⟩',
     description:

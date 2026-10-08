@@ -7,6 +7,7 @@ import { occupiedSpan } from '../../model/circuit'
 import { GATES, type Circuit, type Operation } from '../../model/types'
 import { cellId, partId, type DragData, type DropData } from './dnd'
 import { GateGlyph } from './GateGlyph'
+import { InitialStatePicker } from './InitialStatePicker'
 import { gateParts, qubitRoles, type DropCell, type DropPlan } from './placement'
 
 export const ROW_H = 44
@@ -40,19 +41,19 @@ export function CircuitGrid(props: CircuitGridProps) {
     >
       <div className="circuit__labels" style={{ width: LABEL_W, paddingTop: RULER_H }}>
         {qubits.map((q) => (
-          <button
-            key={q}
-            type="button"
-            className="circuit__wire-label"
-            style={{ height: ROW_H }}
-            aria-pressed={props.selectedQubit === q}
-            aria-label={`Select qubit q${q}`}
-            title={`Select q${q}`}
-            onClick={() => props.onSelectQubit(q)}
-          >
-            <span className="circuit__wire-name">q{q}</span>
-            <span className="circuit__wire-init">|0⟩</span>
-          </button>
+          <div key={q} className="circuit__wire-row" style={{ height: ROW_H }}>
+            <button
+              type="button"
+              className="circuit__wire-label"
+              aria-pressed={props.selectedQubit === q}
+              aria-label={`Select qubit q${q}`}
+              title={`Select q${q}`}
+              onClick={() => props.onSelectQubit(q)}
+            >
+              <span className="circuit__wire-name">q{q}</span>
+            </button>
+            <InitialStatePicker qubit={q} state={circuit.initialStates[q] ?? '0'} />
+          </div>
         ))}
       </div>
 

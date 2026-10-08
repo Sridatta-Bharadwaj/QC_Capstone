@@ -345,3 +345,99 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
 }
+
+/* Wire label row: "q0" (selects the qubit) + the initial-state picker (InitialStatePicker.tsx). */
+.circuit__wire-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: var(--sp-1);
+}
+
+.circuit__wire-row > .circuit__wire-label {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+}
+
+.circuit__wire-row:has(> .circuit__wire-label[aria-pressed='true']) {
+  background: var(--color-bg-selected);
+}
+
+.initial-state__button {
+  flex-shrink: 0;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 var(--sp-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.initial-state__button:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-bg-hover);
+}
+
+.initial-state__button[aria-expanded='true'] {
+  border-color: var(--color-accent);
+}
+
+.initial-state__menu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  min-width: 112px;
+  padding: var(--sp-1) 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-panel);
+}
+
+.initial-state__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 24px;
+  padding: 0 var(--sp-2) 0 var(--sp-1);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.initial-state__item:hover,
+.initial-state__item:focus-visible,
+.initial-state__item:focus {
+  background: var(--color-bg-hover);
+  outline: none;
+}
+
+.initial-state__item:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--color-focus);
+}
+
+.initial-state__check {
+  display: inline-flex;
+  width: 16px;
+  justify-content: center;
+  color: var(--color-accent);
+}
+
+.initial-state__ket {
+  flex: 1;
+  font-family: var(--font-mono);
+}
+
+.initial-state__axis {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
