@@ -472,3 +472,9 @@
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
 }
+
+/* The canvas is focusable by click (tabIndex −1, for the [ / ] shortcuts) but not a tab stop;
+   its focus is not a keyboard-visible state, so no outline. */
+.canvas:focus {
+  outline: none;
+}

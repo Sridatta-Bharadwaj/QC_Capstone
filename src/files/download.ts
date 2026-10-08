@@ -37,6 +37,9 @@ export const DOWNLOAD_MIME: Record<DownloadKind, string> = {
 }
 
 /** Saves a blob as a file: a temporary <a download> pointing at an object URL. */
+/** Delay before the object URL of a download is released. */
+export const REVOKE_DELAY_MS = 10_000
+
 export function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -46,8 +49,9 @@ export function saveBlob(blob: Blob, filename: string): void {
   document.body.append(link)
   link.click()
   link.remove()
-  // Revoke after the click has been handled, so the browser has started the download.
-  setTimeout(() => URL.revokeObjectURL(url), 0)
+  // Revoke only after the browser has had time to start the download (Firefox and Safari
+  // read the blob asynchronously; revoking at once can cancel the download there).
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_DELAY_MS)
 }
 
 /** Downloads the circuit as OpenQASM 2.0 or Qiskit Python; returns the file name. */

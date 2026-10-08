@@ -92,7 +92,8 @@ export function CanvasView() {
   const message = liveReason ?? hint?.text ?? null
 
   return (
-    <section className="canvas" aria-label="Circuit" onKeyDown={handleKeyDown}>
+    // tabIndex −1: clicking anywhere in the canvas focuses it, so `[` / `]` work right away.
+    <section className="canvas" aria-label="Circuit" tabIndex={-1} onKeyDown={handleKeyDown}>
       <div className="panel-header">
         <span>Circuit</span>
         <span className="spacer" />

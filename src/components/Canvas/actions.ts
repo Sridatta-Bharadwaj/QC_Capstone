@@ -1,7 +1,8 @@
 // Canvas actions: glue between placement plans (pure) and the stores.
 // Called from drag-and-drop handlers, palette clicks and keyboard shortcuts.
 import { useCircuitStore } from '../../model/store'
-import type { GateType } from '../../model/types'
+import { MAX_OPERATIONS, type GateType } from '../../model/types'
+import { MAX_COLUMN } from '../../model/validate'
 import { useCanvasStore } from './canvasStore'
 import {
   planAppend,
@@ -20,6 +21,16 @@ function applyPlan(plan: DropPlan): boolean {
     return false
   }
   const store = useCircuitStore.getState()
+  // Same limits as validateCircuit, so anything built here also survives autosave and links.
+  if (plan.kind === 'add' && store.circuit.operations.length >= MAX_OPERATIONS) {
+    canvas.showHint(`Gate limit reached: a circuit can have at most ${MAX_OPERATIONS} gates.`)
+    return false
+  }
+  const column = plan.kind === 'add' ? plan.op.column : plan.patch.column
+  if (column !== undefined && column > MAX_COLUMN) {
+    canvas.showHint(`Column limit reached: gates can go up to column ${MAX_COLUMN}.`)
+    return false
+  }
   if (plan.kind === 'add') {
     const id = store.addOperation(plan.op, 'canvas')
     if (id === null) {

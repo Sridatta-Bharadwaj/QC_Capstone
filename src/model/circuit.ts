@@ -151,3 +151,28 @@ export function circuitsEqual(a: Circuit, b: Circuit): boolean {
   const cb = canon(b)
   return ca.every((key, i) => key === cb[i])
 }
+
+/**
+ * Shrinks every run of empty columns longer than `maxGap` (including empty columns before the
+ * first gate) down to `maxGap`. Gate order and the gates sharing a column are unchanged, so the
+ * statevector is the same; only the layout gets shorter. Used for circuits loaded from outside
+ * (links, saved data), where a gate at column 999 would otherwise mean 999 empty columns and
+ * 999 no-op debugger steps.
+ */
+export function collapseEmptyColumns(circuit: Circuit, maxGap = 1): Circuit {
+  const used = [...new Set(circuit.operations.map((op) => op.column))].sort((a, b) => a - b)
+  const newColumn = new Map<number, number>()
+  let previousOld = -1
+  let previousNew = -1
+  for (const column of used) {
+    const gap = Math.min(column - previousOld - 1, previousOld === -1 ? 0 : maxGap)
+    previousNew = previousNew + 1 + gap
+    previousOld = column
+    newColumn.set(column, previousNew)
+  }
+  if (used.every((c) => newColumn.get(c) === c)) return circuit
+  return {
+    ...circuit,
+    operations: circuit.operations.map((op) => ({ ...op, column: newColumn.get(op.column)! })),
+  }
+}

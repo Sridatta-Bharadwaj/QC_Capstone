@@ -3,7 +3,7 @@
 // Storage is untrusted (another tab, an old version or the user may have written anything)
 // and may be unavailable (private mode, blocked site data, quota). So: every access is in
 // try/catch, the size is checked before JSON.parse, and the parsed value goes through
-// validateCircuit. Invalid data is removed so it cannot break the next start either.
+// validateCircuit. Invalid data is moved aside (BACKUP_KEY) so it cannot break the next start.
 import { useCircuitStore } from '../model/store'
 import type { Circuit } from '../model/types'
 import { validateCircuit, type ValidationResult } from '../model/validate'
@@ -24,7 +24,19 @@ function getStorage(): Storage | null {
   }
 }
 
-function removeSaved(storage: Storage): void {
+/**
+ * Invalid saved data is moved here instead of being deleted outright, so a circuit that a
+ * future version rejects is not silently lost (it can be recovered from the browser's dev
+ * tools). Only one backup is kept, and oversized data is never copied.
+ */
+export const BACKUP_KEY = 'qc-capstone:circuit:v2:discarded'
+
+function removeSaved(storage: Storage, raw: string): void {
+  try {
+    if (raw.length <= MAX_SAVED_CHARS) storage.setItem(BACKUP_KEY, raw)
+  } catch {
+    // Quota or blocked storage: losing the backup is acceptable, the app must still start.
+  }
   try {
     storage.removeItem(STORAGE_KEY)
   } catch {
@@ -34,7 +46,7 @@ function removeSaved(storage: Storage): void {
 
 /**
  * Reads the saved circuit. Returns null when nothing is saved (or storage is unavailable),
- * `{ circuit }` when valid, `{ error }` when the saved data was invalid and has been removed.
+ * `{ circuit }` when valid, `{ error }` when the saved data was invalid and has been moved to BACKUP_KEY.
  */
 export function readSavedCircuit(): ValidationResult | null {
   const storage = getStorage()
@@ -57,7 +69,7 @@ export function readSavedCircuit(): ValidationResult | null {
       result = { error: 'Saved circuit is not valid JSON.' }
     }
   }
-  if ('error' in result) removeSaved(storage)
+  if ('error' in result) removeSaved(storage, raw)
   return result
 }
 
