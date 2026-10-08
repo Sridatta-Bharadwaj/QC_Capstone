@@ -354,3 +354,25 @@
 .inspector__button:hover {
   background: var(--color-bg-hover);
 }
+
+/* Rotation-angle slider (V2-6): the native range input in the accent colour. */
+.inspector__slider {
+  width: 160px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.inspector__slider:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* Current value as an exact π fraction or a decimal; fixed width so the bar does not jump. */
+.inspector__slider-value {
+  min-width: 7ch;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
