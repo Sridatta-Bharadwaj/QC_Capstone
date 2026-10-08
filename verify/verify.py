@@ -6,6 +6,8 @@ rebuilds every circuit in Qiskit, and compares for each circuit:
   (a) every qubit's reduced density matrix rho_k  (engine vs qiskit partial_trace)
   (b) the full statevector, after fixing the qubit ordering (see ENDIANNESS below)
   (c) every qubit's Bloch vector and purity
+  (d) V2-7: for several kept sets K per circuit, the subset-reduced rho_K, its purity
+      and its von Neumann entropy (engine vs qiskit partial_trace / entropy(base=2))
 
 Prints a summary table and exits with status 1 if any difference exceeds TOL.
 
@@ -31,6 +33,12 @@ is exactly what Qiskit's Statevector.reverse_qargs() does.
 Reduced density matrices need no correction: partial_trace takes qubit LABELS
 (q0, q1, ...), which mean the same thing in both programs, and a single-qubit
 rho is just a 2x2 matrix in the basis |0>, |1> of that qubit.
+
+Subset-reduced matrices (d) DO need a correction. partial_trace(state, traced) returns
+a matrix over the kept qubits in ascending label order, but little-endian: the
+LOWEST kept label is the least significant bit of the reduced index. The engine
+reads the kept qubits big-endian (lowest label = most significant bit). So
+engine rho_K[a][b] = qiskit rho_K[reverse_bits(a, k)][reverse_bits(b, k)].
 """
 
 from __future__ import annotations
@@ -42,7 +50,7 @@ from pathlib import Path
 import numpy as np
 import qiskit
 from qiskit import QuantumCircuit
-from qiskit.quantum_info import Statevector, partial_trace
+from qiskit.quantum_info import DensityMatrix, Statevector, entropy, partial_trace
 
 TOL = 1e-9
 RESULTS = Path(__file__).resolve().parent / "out" / "engine_results.json"
@@ -134,6 +142,20 @@ def to_big_endian(qiskit_amplitudes: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
+def reduced_to_big_endian(rho: np.ndarray, k: int) -> np.ndarray:
+    """Re-index a k-qubit little-endian (Qiskit) matrix into big-endian (engine) order."""
+    perm = [reverse_bits(a, k) for a in range(2**k)]
+    return rho[np.ix_(perm, perm)]
+
+
+def qiskit_subset_rho(state: Statevector, keep: list[int]) -> np.ndarray:
+    """Qiskit's reduced rho of the kept qubits, in the engine's (big-endian) basis."""
+    n = state.num_qubits
+    traced = [q for q in range(n) if q not in keep]
+    rho = partial_trace(state, traced).data if traced else DensityMatrix(state).data
+    return reduced_to_big_endian(rho, len(keep))
+
+
 def endianness_self_test() -> None:
     """Demonstrate (and assert) the ordering difference on the |01> example."""
     qc = QuantumCircuit(2)
@@ -143,6 +165,12 @@ def endianness_self_test() -> None:
     fixed = to_big_endian(data, 2)
     assert abs(fixed[0b01]) == 1, "after reversal it should be at index 1 (big-endian)"
     assert np.allclose(fixed, Statevector(qc).reverse_qargs().data)
+
+    # Subset ordering: q0 = 1, q1 = 0, q2 = 0; keep {0, 2} -> engine |q0 q2> = |10> (index 2).
+    qc3 = QuantumCircuit(3)
+    qc3.x(0)
+    rho = qiskit_subset_rho(Statevector(qc3), [0, 2])
+    assert abs(rho[0b10, 0b10] - 1) < 1e-12, "kept set must be read big-endian after the fix"
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +211,66 @@ def compare(entry: dict) -> dict:
         d_purity = max(d_purity, abs(q["purity"] - float(np.real(np.trace(rho @ rho)))))
 
     return {"rho": d_rho, "psi": d_psi, "bloch": d_bloch, "purity": d_purity}
+
+
+def compare_subsets(entry: dict) -> dict:
+    """(d) Max differences over this circuit's kept sets: rho_K, purity and entropy."""
+    state = Statevector(build_qiskit_circuit(entry["circuit"]))
+    d = {"rho": 0.0, "purity": 0.0, "entropy": 0.0}
+    for sub in entry["subsets"]:
+        rho = qiskit_subset_rho(state, sub["keep"])
+        d["rho"] = max(d["rho"], float(np.max(np.abs(complex_array(sub["rho"]) - rho))))
+        d["purity"] = max(d["purity"], abs(sub["purity"] - float(np.real(np.trace(rho @ rho)))))
+        s_qiskit = float(entropy(DensityMatrix(rho), base=2))
+        d["entropy"] = max(d["entropy"], abs(sub["entropy"] - s_qiskit))
+    return d
+
+
+def subset_report(data: dict) -> list[str]:
+    """(d) Compare every kept set; print a second table; return failure lines."""
+    stats: dict[str, dict] = {}
+    failures: list[str] = []
+    for entry in data["circuits"]:
+        if not entry.get("subsets"):
+            continue
+        d = compare_subsets(entry)
+        s = stats.setdefault(
+            entry["category"], {"n": 0, "sets": 0, "rho": 0.0, "purity": 0.0, "entropy": 0.0}
+        )
+        s["n"] += 1
+        s["sets"] += len(entry["subsets"])
+        for key in ("rho", "purity", "entropy"):
+            s[key] = max(s[key], d[key])
+        if max(d.values()) > TOL:
+            failures.append(
+                f"  [subsets] {entry['category']} / {entry['name']}: "
+                + ", ".join(f"max|d{k}| = {v:.3e}" for k, v in d.items())
+            )
+
+    print("\nKeep-any-subset partial trace (V2-7): engine vs partial_trace + entropy(base=2)\n")
+    header = (
+        f"{'category':<22}{'circuits':>9}{'kept sets':>10}"
+        f"{'max|Δρ_K|':>12}{'max|Δpur|':>12}{'max|ΔS|':>12}  result"
+    )
+    print(header)
+    print("-" * len(header))
+    total = {"n": 0, "sets": 0, "rho": 0.0, "purity": 0.0, "entropy": 0.0}
+    for cat, s in stats.items():
+        ok = max(s["rho"], s["purity"], s["entropy"]) <= TOL
+        print(
+            f"{cat:<22}{s['n']:>9}{s['sets']:>10}{s['rho']:>12.2e}{s['purity']:>12.2e}"
+            f"{s['entropy']:>12.2e}  {'PASS' if ok else 'FAIL'}"
+        )
+        total["n"] += s["n"]
+        total["sets"] += s["sets"]
+        for key in ("rho", "purity", "entropy"):
+            total[key] = max(total[key], s[key])
+    print("-" * len(header))
+    print(
+        f"{'TOTAL':<22}{total['n']:>9}{total['sets']:>10}{total['rho']:>12.2e}"
+        f"{total['purity']:>12.2e}{total['entropy']:>12.2e}  {'FAIL' if failures else 'PASS'}"
+    )
+    return failures
 
 
 def main() -> int:
@@ -235,11 +323,13 @@ def main() -> int:
         f"{overall['bloch']:>12.2e}{overall['purity']:>12.2e}  {'FAIL' if failures else 'PASS'}"
     )
 
+    failures += subset_report(data)
+
     if failures:
         print(f"\n{len(failures)} circuit(s) differ by more than {TOL:g}:")
         print("\n".join(failures))
         return 1
-    print(f"\nAll {total} circuits agree with Qiskit to within {TOL:g}.")
+    print(f"\nAll {total} circuits (and all their kept sets) agree with Qiskit to within {TOL:g}.")
     return 0
 
 

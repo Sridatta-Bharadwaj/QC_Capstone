@@ -13,9 +13,15 @@ import './styles/tokens.css'
 import './styles/global.css'
 
 import App from './App'
+import { installHistoryShortcuts } from './history/shortcuts'
+import { initPersistence } from './persistence/startup'
 import { initTheme } from './theme/themeStore'
 
 initTheme()
+// Before the first render: load the shared link / saved circuit (no flash of the default
+// circuit), then start undo history and autosave.
+initPersistence()
+installHistoryShortcuts()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

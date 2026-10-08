@@ -58,6 +58,24 @@ describe('BlochCard', () => {
     expect(rows[1]).toContainElement(screen.getByTestId('bloch-purity'))
   })
 
+  it.each(['side', 'stack'] as const)(
+    'lists x, y, z, |r| and purity one per row when the stats are %s',
+    (stats) => {
+      render(<BlochCard data={mockQubit(0, VECTORS.wLike)} stats={stats} />)
+      const rows = document.querySelectorAll('.bloch-card__row')
+      expect([...rows].map((r) => r.querySelector('dt')?.textContent)).toEqual([
+        'x',
+        'y',
+        'z',
+        '|r|',
+        'purity',
+      ])
+      expect(screen.getByTestId('bloch-z')).toHaveTextContent('0.333')
+      expect(screen.getByTestId('bloch-purity')).toHaveTextContent('0.556')
+      expect(document.querySelector(`.bloch-card__body--${stats}`)).not.toBeNull()
+    },
+  )
+
   it('selects the qubit on click and on Enter / Space, and marks the card selected', () => {
     render(<BlochCard data={mockQubit(1, VECTORS.zero)} />)
     const body = screen.getByRole('button', { name: 'Select q1' })

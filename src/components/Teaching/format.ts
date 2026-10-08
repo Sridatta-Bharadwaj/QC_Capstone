@@ -8,6 +8,12 @@ import type { Complex, ComplexMatrix } from '../../engine/types'
  */
 export const MAX_DISPLAY_QUBITS = 4
 
+/**
+ * Most kept qubits for which a subset-reduced ρ is drawn (8×8 at 3 qubits), V2-7.
+ * Equals the engine's MAX_EXPLICIT_KEEP, so the textbook steps exist whenever ρ is drawn.
+ */
+export const MAX_DISPLAY_KEPT = 3
+
 /** Below this magnitude a number is treated as zero (floating-point noise). */
 export const ZERO_EPS = 1e-9
 
@@ -74,16 +80,25 @@ export interface BasisPart {
   highlighted: boolean
 }
 
-/** Ket bits with qubit `highlight`'s bit flagged, for drawing it emphasised. */
+/** One qubit, a list of qubits (the kept set), or none. */
+export type QubitHighlight = number | readonly number[] | null
+
+/** True when `qubit` is (one of) the highlighted qubit(s). */
+export function isHighlighted(qubit: number, highlight: QubitHighlight): boolean {
+  if (highlight === null) return false
+  return typeof highlight === 'number' ? qubit === highlight : highlight.includes(qubit)
+}
+
+/** Ket bits with the highlighted qubit(s)' bits flagged, for drawing them emphasised. */
 export function basisParts(
   index: number,
   numQubits: number,
-  highlight: number | null,
+  highlight: QubitHighlight,
 ): BasisPart[] {
   return basisBits(index, numQubits).map((bit, qubit) => ({
     bit,
     qubit,
-    highlighted: qubit === highlight,
+    highlighted: isHighlighted(qubit, highlight),
   }))
 }
 
@@ -129,4 +144,14 @@ export function qubitList(qubits: number[]): string | null {
 /** Key for a matrix cell in a Set: "row,col". */
 export function cellKey(row: number, col: number): string {
   return `${row},${col}`
+}
+
+/** The qubits not in `keep`, for n qubits. */
+export function tracedOut(numQubits: number, keep: readonly number[]): number[] {
+  return Array.from({ length: numQubits }, (_, q) => q).filter((q) => !keep.includes(q))
+}
+
+/** "|q0 q2⟩": how the basis states of the kept qubits are written. */
+export function keptKetLabel(keep: readonly number[]): string {
+  return `|${keep.map((q) => `q${q}`).join(' ')}⟩`
 }
