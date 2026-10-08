@@ -17,7 +17,7 @@ import { INITIAL_STATES, type InitialState } from '../../model/types'
 import { MathText } from '../common/MathText'
 
 /** Ket label of each state (real minus sign, not a hyphen). */
-export const INITIAL_STATE_KETS: Record<InitialState, string> = {
+const INITIAL_STATE_KETS: Record<InitialState, string> = {
   '0': '|0⟩',
   '1': '|1⟩',
   '+': '|+⟩',
