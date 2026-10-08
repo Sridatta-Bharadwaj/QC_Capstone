@@ -2,7 +2,7 @@
 // footer with hints and the inspector for the selected gate.
 import { useDndContext } from '@dnd-kit/core'
 import { useEffect, type KeyboardEvent } from 'react'
-import { columnCount } from '../../model/circuit'
+import { columnCount, hasNonDefaultInitialStates } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
 import { MAX_QUBITS } from '../../model/types'
 import { MathText } from '../common/MathText'
@@ -133,8 +133,15 @@ export function CanvasView() {
         />
         {circuit.operations.length === 0 && (
           <p className="canvas__empty" data-testid="canvas-empty">
-            <MathText text="No gates yet: every qubit is in |0⟩." /> Drag a gate from the palette
-            onto a wire, click a gate in the palette to append it, or pick a preset.
+            <MathText
+              text={
+                hasNonDefaultInitialStates(circuit)
+                  ? 'No gates yet: each qubit stays in its start state.'
+                  : 'No gates yet: every qubit is in |0⟩.'
+              }
+            />{' '}
+            Drag a gate from the palette onto a wire, click a gate in the palette to append it, or
+            pick a preset.
           </p>
         )}
       </div>
