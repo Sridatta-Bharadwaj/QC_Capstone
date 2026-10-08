@@ -30,3 +30,16 @@
 .title-bar__spacer {
   flex: 1;
 }
+
+.title-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Thin vertical rule between the circuit actions and the theme toggle. */
+.title-bar__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-border-strong);
+}
