@@ -7,15 +7,8 @@ import { useEffect, type ChangeEvent } from 'react'
 import { columnCount } from '../../model/circuit'
 import { useCircuitStore } from '../../model/store'
 import { currentStep, useStepStore } from '../../model/stepStore'
+import { PLAY_STEP_MS, describeStep } from './timelineText'
 import './Timeline.css'
-
-/** Time each step stays on screen while playing. */
-export const PLAY_STEP_MS = 700
-
-/** Short description of a step, e.g. "after column 1" or "start state". */
-export function describeStep(step: number): string {
-  return step === 0 ? 'start state' : `after column ${step - 1}`
-}
 
 export function Timeline() {
   const numSteps = useCircuitStore((s) => columnCount(s.circuit))
@@ -67,7 +60,7 @@ export function Timeline() {
         className="icon-button"
         aria-label="First step (start state)"
         title="First step: the start state"
-        disabled={empty || (!live && atStart)}
+        disabled={empty || atStart}
         onClick={() => goTo(0, numSteps)}
       >
         <span className="codicon codicon-debug-reverse-continue" aria-hidden="true" />
@@ -91,7 +84,10 @@ export function Timeline() {
         disabled={empty}
         onClick={togglePlay}
       >
-        <span className={`codicon codicon-${playing ? 'debug-pause' : 'play'}`} aria-hidden="true" />
+        <span
+          className={`codicon codicon-${playing ? 'debug-pause' : 'play'}`}
+          aria-hidden="true"
+        />
       </button>
       <button
         type="button"
@@ -108,7 +104,7 @@ export function Timeline() {
         className="icon-button"
         aria-label="Last step (after the last column)"
         title="Last step: after the last column"
-        disabled={empty || (!live && atEnd)}
+        disabled={empty || atEnd}
         onClick={() => goTo(numSteps, numSteps)}
       >
         <span className="codicon codicon-debug-continue" aria-hidden="true" />
