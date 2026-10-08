@@ -2,20 +2,32 @@
 // Purity Tr(ρₖ²) is 1 for a pure qubit and 0.5 for a maximally mixed one.
 import { useCircuitStore, useProblemsStore, useResultsStore } from '../../model/store'
 import { useUiStore } from '../../model/uiStore'
-import { MAX_QUBITS } from '../../model/types'
+import { MAX_QUBITS, type Problem } from '../../model/types'
 import { columnCount } from '../../model/circuit'
 import { currentStep, useStepStore } from '../../model/stepStore'
 import { formatReal, qubitList } from '../Teaching/format'
 import './StatusBar.css'
+
+const hasErrors = (problems: Problem[]) => problems.some((p) => p.severity === 'error')
+
+/** "QASM has errors — …", "Qiskit has errors — …", "QASM and Qiskit have errors — …" or null. */
+function staleText(qasm: boolean, qiskit: boolean): string | null {
+  const tabs = [qasm ? 'QASM' : null, qiskit ? 'Qiskit' : null].filter((t) => t !== null)
+  if (tabs.length === 0) return null
+  const verb = tabs.length === 1 ? 'has' : 'have'
+  return `${tabs.join(' and ')} ${verb} errors — showing last valid circuit`
+}
 
 export function StatusBar() {
   const numQubits = useCircuitStore((s) => s.circuit.numQubits)
   const analysis = useResultsStore((s) => s.analysis)
   const computing = useResultsStore((s) => s.computing)
   const error = useResultsStore((s) => s.error)
-  // While the QASM has errors, the circuit (and everything computed from it) is the last valid
-  // one, not what the editor shows. Say so, and link to the Problems tab.
-  const qasmHasErrors = useProblemsStore((s) => s.problems.some((p) => p.severity === 'error'))
+  // While a code tab has errors, the circuit (and everything computed from it) is the last
+  // valid one, not what that editor shows. Say so, and link to the Problems tab.
+  const qasmHasErrors = useProblemsStore((s) => hasErrors(s.byTab.qasm))
+  const qiskitHasErrors = useProblemsStore((s) => hasErrors(s.byTab.qiskit))
+  const staleMessage = staleText(qasmHasErrors, qiskitHasErrors)
   const setBottomTab = useUiStore((s) => s.setBottomTab)
   // Step-through debugger (V2-5): everything here describes the state at that step.
   const numSteps = useCircuitStore((s) => columnCount(s.circuit))
@@ -73,16 +85,16 @@ export function StatusBar() {
         </button>
       )}
 
-      {qasmHasErrors && (
+      {staleMessage && (
         <button
           type="button"
           className="status-bar__item status-bar__button status-bar__warning"
           data-testid="status-stale"
-          title="The circuit, spheres and matrices are from the last QASM that parsed. Click to see the problems."
+          title="The circuit, spheres and matrices are from the last code that parsed. Click to see the problems."
           onClick={() => setBottomTab('problems')}
         >
           <span className="codicon codicon-warning" aria-hidden="true" />
-          QASM has errors — showing last valid circuit
+          {staleMessage}
         </button>
       )}
 

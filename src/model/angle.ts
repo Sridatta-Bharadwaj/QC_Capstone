@@ -1,15 +1,54 @@
-// Rotation angles as text, shared by the canvas angle input, code generation and the QASM parser.
+// Rotation angles as text, shared by the canvas angle input, code generation and both code
+// parsers (QASM and Qiskit).
 //
-// parseAngle accepts what OpenQASM 2.0 allows for a constant angle: numbers, `pi` (or `π`),
-// + - * / and parentheses, e.g. "pi/2", "-3*pi/4", "0.25", "2*(pi/3)".
+// parseAngle accepts a constant angle expression: numbers, a name for π, + - * / and
+// parentheses, e.g. "pi/2", "-3*pi/4", "0.25", "2*(pi/3)". Which names mean π depends on the
+// language: QASM writes `pi` (we also accept `π`); Python code may write `pi`, `np.pi`,
+// `numpy.pi` or `math.pi` (see QISKIT_PI_NAMES).
 // formatAngle writes radians back as a short, exact-looking expression when the angle is
 // a simple multiple of π/k, otherwise as a plain decimal.
+//
+// Security: the text may come from a file or a URL, so it is never executed. It is read by a
+// small hand-written tokenizer and recursive-descent parser with hard limits on length and
+// nesting depth, so hostile input fails fast instead of overflowing the stack.
+
+/** Names that mean π in OpenQASM 2.0 (and in the canvas angle input). */
+export const QASM_PI_NAMES: readonly string[] = ['pi', 'π']
+
+/** Names that mean π in Python / Qiskit code. */
+export const QISKIT_PI_NAMES: readonly string[] = ['pi', 'np.pi', 'numpy.pi', 'math.pi']
+
+/** Longest angle expression we read (characters). Real angles are a few dozen at most. */
+export const MAX_ANGLE_LENGTH = 1000
+
+/** Deepest nesting of parentheses / unary signs we follow before giving up. */
+export const MAX_ANGLE_DEPTH = 64
+
+export interface AngleOptions {
+  /** Names that stand for π. Default: QASM_PI_NAMES. */
+  piNames?: readonly string[]
+}
+
+export type AngleResult = { value: number } | { error: string }
 
 /** Parses an angle expression in radians. Returns null if the text is not a valid expression. */
-export function parseAngle(text: string): number | null {
-  const tokens = tokenize(text)
-  if (tokens === null || tokens.length === 0) return null
+export function parseAngle(text: string, options: AngleOptions = {}): number | null {
+  const result = evaluateAngle(text, options)
+  return 'value' in result ? result.value : null
+}
+
+/**
+ * Like parseAngle, but says why an expression was rejected (too long, nested too deeply,
+ * not a finite number, or simply not a valid expression).
+ */
+export function evaluateAngle(text: string, options: AngleOptions = {}): AngleResult {
+  if (text.length > MAX_ANGLE_LENGTH)
+    return { error: `Angle expression is too long (over ${MAX_ANGLE_LENGTH} characters).` }
+  const tokens = tokenize(text, options.piNames ?? QASM_PI_NAMES)
+  if (tokens === null || tokens.length === 0) return { error: 'Invalid angle expression.' }
   let pos = 0
+  // Set when the nesting limit is hit, so every level of the recursion stops at once.
+  let tooDeep = false
 
   const peek = () => tokens[pos]
   const next = () => tokens[pos++]
@@ -18,67 +57,92 @@ export function parseAngle(text: string): number | null {
   //   expr   := term (('+' | '-') term)*
   //   term   := unary (('*' | '/') unary)*
   //   unary  := ('-' | '+') unary | atom
-  //   atom   := number | 'pi' | '(' expr ')'
-  function expr(): number | null {
-    let value = term()
+  //   atom   := number | PI | '(' expr ')'
+  // `depth` counts how many unary signs / parentheses we are inside. Each function returns
+  // null on any error.
+  function expr(depth: number): number | null {
+    let value = term(depth)
     while (value !== null && (peek() === '+' || peek() === '-')) {
       const op = next()
-      const rhs = term()
+      const rhs = term(depth)
       if (rhs === null) return null
       value = op === '+' ? value + rhs : value - rhs
     }
     return value
   }
 
-  function term(): number | null {
-    let value = unary()
+  function term(depth: number): number | null {
+    let value = unary(depth)
     while (value !== null && (peek() === '*' || peek() === '/')) {
       const op = next()
-      const rhs = unary()
+      const rhs = unary(depth)
       if (rhs === null) return null
       value = op === '*' ? value * rhs : value / rhs
     }
     return value
   }
 
-  function unary(): number | null {
+  function unary(depth: number): number | null {
+    if (depth > MAX_ANGLE_DEPTH) {
+      tooDeep = true
+      return null
+    }
     if (peek() === '-' || peek() === '+') {
       const op = next()
-      const value = unary()
+      const value = unary(depth + 1)
       if (value === null) return null
       return op === '-' ? -value : value
     }
-    return atom()
+    return atom(depth)
   }
 
-  function atom(): number | null {
+  function atom(depth: number): number | null {
     const token = next()
     if (token === undefined) return null
-    if (token === 'pi') return Math.PI
+    if (token === PI) return Math.PI
     if (token === '(') {
-      const value = expr()
-      if (next() !== ')') return null
+      const value = expr(depth + 1)
+      if (value === null || next() !== ')') return null
       return value
     }
     const n = Number(token)
-    return Number.isFinite(n) && /^[0-9.]/.test(token) ? n : null
+    return /^[0-9.]/.test(token) && Number.isFinite(n) ? n : null
   }
 
-  const value = expr()
-  if (value === null || pos !== tokens.length || !Number.isFinite(value)) return null
-  return value
+  const value = expr(0)
+  if (tooDeep)
+    return { error: `Angle expression is nested too deeply (over ${MAX_ANGLE_DEPTH} levels).` }
+  if (value === null || pos !== tokens.length) return { error: 'Invalid angle expression.' }
+  // e.g. 1/0 or 1e308*10: not a usable angle.
+  if (!Number.isFinite(value)) return { error: 'Angle is not a finite number.' }
+  return { value }
 }
 
-function tokenize(text: string): string[] | null {
+/** Token standing for π, whichever name was written. */
+const PI = 'PI'
+
+/**
+ * Splits the text into numbers, π names and the symbols + - * / ( ).
+ * Returns null on any other character or on a name that is not a π name.
+ */
+function tokenize(text: string, piNames: readonly string[]): string[] | null {
   const tokens: string[] = []
-  const re = /\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|(pi|π)|([-+*/()]))/y
+  // number | name (may be dotted, e.g. np.pi) | symbol. Sticky (`y`): each match starts at
+  // `index`, so nothing is skipped.
+  const re =
+    /\s*(?:(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_π][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)|([-+*/()]))/y
   let index = 0
   const source = text.trim()
   while (index < source.length) {
     re.lastIndex = index
     const m = re.exec(source)
     if (!m) return null
-    tokens.push(m[1] ?? (m[2] ? 'pi' : m[3]))
+    if (m[2] !== undefined) {
+      if (!piNames.includes(m[2])) return null
+      tokens.push(PI)
+    } else {
+      tokens.push(m[1] ?? m[3])
+    }
     index = re.lastIndex
   }
   return tokens

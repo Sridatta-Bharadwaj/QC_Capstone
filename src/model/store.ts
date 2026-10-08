@@ -15,6 +15,7 @@ import {
   MAX_QUBITS,
   type ChangeSource,
   type Circuit,
+  type CodeTab,
   type InitialState,
   type Operation,
   type Problem,
@@ -186,15 +187,29 @@ export const useResultsStore = create<ResultsState>((set) => ({
 }))
 
 // ---------------------------------------------------------------------------
-// Problems store (filled by the QASM parser, M7)
+// Problems store (filled by the code-tab parsers: QASM since M7, Qiskit since V2-1)
 // ---------------------------------------------------------------------------
 
 export interface ProblemsState {
+  /** Each code tab's current problems. */
+  byTab: Record<CodeTab, Problem[]>
+  /** All problems, QASM first then Qiskit (each tagged with its `tab`). */
   problems: Problem[]
-  setProblems: (problems: Problem[]) => void
+  /** Replaces one tab's problems (the other tab's stay). */
+  setProblems: (tab: CodeTab, problems: Problem[]) => void
 }
 
+const NO_PROBLEMS: Problem[] = []
+
 export const useProblemsStore = create<ProblemsState>((set) => ({
-  problems: [],
-  setProblems: (problems) => set({ problems }),
+  byTab: { qasm: NO_PROBLEMS, qiskit: NO_PROBLEMS },
+  problems: NO_PROBLEMS,
+  setProblems: (tab, problems) =>
+    set((s) => {
+      // Tag each problem with its tab, so the Problems tab can show and open the source.
+      const tagged = problems.length === 0 ? NO_PROBLEMS : problems.map((p) => ({ ...p, tab }))
+      const byTab = { ...s.byTab, [tab]: tagged }
+      const all = [...byTab.qasm, ...byTab.qiskit]
+      return { byTab, problems: all.length === 0 ? NO_PROBLEMS : all }
+    }),
 }))
