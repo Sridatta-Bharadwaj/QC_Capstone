@@ -1,0 +1,71 @@
+/* Step-through debugger bar under the circuit (V2-5). */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 24px;
+  padding: 0 var(--sp-2);
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-panel);
+  font-size: var(--fs-sm);
+}
+
+.timeline__slider {
+  flex: 1;
+  min-width: 60px;
+  max-width: 360px;
+  margin: 0 var(--sp-2);
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.timeline__slider:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.timeline__slider:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.timeline__label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline__live {
+  height: 20px;
+  margin-left: auto;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.timeline__live:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.timeline__live--on {
+  border-color: var(--color-accent);
+  background: var(--color-bg-selected);
+  color: var(--color-text);
+}
+
+.timeline__live:focus-visible {
+  outline: 1px solid var(--color-focus);
+  outline-offset: 1px;
+}

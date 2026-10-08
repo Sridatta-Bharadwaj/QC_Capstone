@@ -1,6 +1,7 @@
 // Wires the stores to the engine: circuit store → worker → results store.
 import { useEffect } from 'react'
 import { useCircuitStore, useResultsStore } from '../model/store'
+import { requestedStep, useStepStore } from '../model/stepStore'
 import { EngineClient, type WorkerLike } from './engineClient'
 
 /** Spawn the real module worker, or null if Web Workers are unavailable. */
@@ -17,7 +18,9 @@ export function createEngineWorker(): WorkerLike | null {
 
 /**
  * Start the bridge: send the current circuit right away, then a new request
- * whenever the circuit or the selected qubit changes. Results, errors and the
+ * whenever the circuit, the selected qubit or the debugger step (V2-5) changes.
+ * The step goes in the request, so every view fed by useResultsStore (spheres,
+ * status bar, single-qubit teaching tabs) shows the state at that step. Results, errors and the
  * `computing` flag go to useResultsStore.
  *
  * `computing` semantic: true only when the latest results have been out of date
@@ -38,16 +41,28 @@ export function startEngineBridge(
     onComputingChange: (computing) => results.setComputing(computing),
   })
 
-  const initial = useCircuitStore.getState()
-  client.request(initial.circuit, initial.selectedQubit)
+  // Always send the latest circuit, selection and step together.
+  const sendCurrent = () => {
+    const { circuit, selectedQubit } = useCircuitStore.getState()
+    const step = requestedStep(useStepStore.getState())
+    client.send({ type: 'analyze', circuit, explicitQubit: selectedQubit, step })
+  }
+  sendCurrent()
 
   // A selection change re-runs the whole analysis too. That keeps one simple
   // code path; at ≤ 6 qubits the extra direct-method work is negligible.
-  const unsubscribe = useCircuitStore.subscribe((state, prev) => {
+  const unsubscribeCircuit = useCircuitStore.subscribe((state, prev) => {
     if (state.circuit !== prev.circuit || state.selectedQubit !== prev.selectedQubit) {
-      client.request(state.circuit, state.selectedQubit)
+      sendCurrent()
     }
   })
+  const unsubscribeStep = useStepStore.subscribe((state, prev) => {
+    if (requestedStep(state) !== requestedStep(prev)) sendCurrent()
+  })
+  const unsubscribe = () => {
+    unsubscribeCircuit()
+    unsubscribeStep()
+  }
 
   return () => {
     unsubscribe()

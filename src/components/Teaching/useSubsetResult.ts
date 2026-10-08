@@ -5,6 +5,7 @@
 // circuit or kept set) are dropped by the client's request ids.
 import { useEffect, useRef, useState } from 'react'
 import type { SubsetTraceResult } from '../../engine/types'
+import { requestedStep, useStepStore } from '../../model/stepStore'
 import type { Circuit } from '../../model/types'
 import { EngineClient } from '../../worker/engineClient'
 import { createEngineWorker } from '../../worker/useEngineBridge'
@@ -21,8 +22,8 @@ const sameKeep = (a: readonly number[], b: readonly number[]): boolean =>
   a.length === b.length && a.every((q, i) => q === b[i])
 
 /**
- * Ask the worker for partialTraceSubset(state, keep, explicit = true) whenever the circuit
- * or the kept set changes. Does nothing while `enabled` is false (one kept qubit uses the
+ * Ask the worker for partialTraceSubset(state, keep, explicit = true) whenever the circuit,
+ * the kept set or the debugger step (V2-5: the state after that step; Live = final) changes. Does nothing while `enabled` is false (one kept qubit uses the
  * v1 path) or `keep` is empty.
  */
 export function useSubsetResult(circuit: Circuit, keep: number[], enabled: boolean): SubsetData {
@@ -30,6 +31,7 @@ export function useSubsetResult(circuit: Circuit, keep: number[], enabled: boole
   const [result, setResult] = useState<SubsetTraceResult | null>(null)
   const [computing, setComputing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const step = useStepStore((s) => requestedStep(s))
 
   // One client per mounted view; terminated on unmount.
   useEffect(() => {
@@ -53,8 +55,8 @@ export function useSubsetResult(circuit: Circuit, keep: number[], enabled: boole
 
   useEffect(() => {
     if (!enabled || keep.length === 0) return
-    clientRef.current?.send({ type: 'subset', circuit, keep, explicit: true })
-  }, [circuit, keep, enabled])
+    clientRef.current?.send({ type: 'subset', circuit, keep, explicit: true, step })
+  }, [circuit, keep, enabled, step])
 
   // Only show a result that belongs to what is on screen now.
   const fits =
