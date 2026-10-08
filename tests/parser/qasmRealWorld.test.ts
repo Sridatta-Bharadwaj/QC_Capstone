@@ -1,7 +1,5 @@
 // Real-world OpenQASM 2.0 (V2-3): files as Qiskit's qasm2.dumps writes them, gate definitions,
 // u/p/sx gates, measurement rules, the OpenQASM 3 message, size limits and hostile input.
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { analyze } from '../../src/engine'
 import {
@@ -20,8 +18,9 @@ import {
 } from '../../src/parser/qasm'
 import { parseQiskit } from '../../src/parser/qiskit'
 
-const fixture = (name: string) =>
-  readFileSync(resolve(__dirname, '../fixtures/files', name), 'utf8')
+import { FIXTURE_FILES } from '../fixtures/files'
+
+const fixture = (name: string) => FIXTURE_FILES[name]
 
 const HEADER = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\n'
 
