@@ -1,9 +1,9 @@
 # Project Context Register
 
-_Last updated: 2026-10-07 — v1 (M0–M9) complete, reviewed, fixes merged; next: M10 presentation_
+_Last updated: 2026-10-08 — v2 build in progress (V2-0 merged; wave 1 running)_
 
 ## Current phase
-v1 is complete on `main` (M0–M9 + independent review fixes). All milestone branches are on GitHub. Next: M10 presentation/demo prep (handled separately), deployment (deferred by user), then stretch goals + UI revisit.
+v2 build (PLAN.md → v2). V2-0 contracts merged on `main`. Wave 1 (V2-1, V2-8, V2-4, V2-7) runs in worktrees under `.worktrees/<branch>`.
 
 ## Done
 - [x] Problem statement received (2026-10-06)
@@ -22,11 +22,13 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 - [x] **M9 — Polish** (2026-10-07, `m9-polish`): boot skeleton in `index.html`, Bloch compute/mismatch skeletons, empty states, presets reordered + partially entangled pair, WCAG contrast + design-rule tests `tests/design/`, removed `@monaco-editor/react`, `chunkSizeWarningLimit`, format:check in CI, `README.md` + `docs/screenshots/`. Offline verified: production preview makes only same-origin requests. Deployment NOT done (deferred by user)
 - [x] **Independent review + fixes** (2026-10-07, `fix-review`): no blockers. Fixed: Bloch cards sized from panel (`Bloch/layout.ts`, `useElementSize.ts`) so 6 spheres fit at 1280×720; notice when a canvas edit replaces QASM with errors (`CodePanel/ReplacedNotice.tsx`); status-bar "QASM has errors — showing last valid circuit"; inspector reverts invalid angle on blur; selected gate scrolls into view; `common/MathText.tsx` for ⟨ ⟩ and ⁺ glyphs; even matrix columns; boot/teaching skeletons match layout; disabled-button tooltips; Qiskit imports `pi` only when used. 785 tests
 
+- [x] **V2-0 — Contracts** (2026-10-08, `v2-0-contracts`): `model/types.ts` (ChangeSource split, `InitialState`/`initialStates`, `CodeTab`, `Problem.tab`, limits `MAX_OPERATIONS`/`MAX_UPLOAD_BYTES`/`MAX_URL_BYTES`), `model/circuit.ts` (`defaultInitialStates`, `resizeInitialStates`, `circuitsEqual` + `assignOperationIds` moved here), `model/validate.ts` (`validateCircuit`, implemented), `model/historyStore.ts` (implemented, `coalesceKey`), `model/store.ts` (`setInitialState`), `engine/{simulator,bloch,subset,types,index}.ts` (`productState`, `simulateSteps`, subset stubs), `worker/{protocol,handleRequest,engineClient}.ts` ('steps'/'subset' requests, `step` on analyze, `EngineClient.send`). 832 tests, verify 378/378
+
 ## In progress
-- (nothing)
+- Wave 1: `v2-1-qiskit-sync`, `v2-8-ui-fixes`, `v2-4-history-persistence`, `v2-7-subset-trace`
 
 ## Next up
-- **v2 build (V2-0 … V2-9)**, spec in PLAN.md → v2. Target: done 2026-10-08. Priority order is listed in PLAN.md
+- Merge wave 1 in priority order (V2-1, V2-8, V2-4, V2-7), then wave 2: V2-2 (after V2-1), V2-5 (after V2-8), V2-6 (after V2-8 + V2-4); wave 3: V2-3; wave 4: V2-9 review + `v2-fix-review` + README/DEMO.md
 - Then: security audit → production readiness → deployment → M10 presentation
 - M10 — presentation + scripted demo + offline backup (separate)
 - Deployment (GitHub Pages; `base: './'` already set) when the user asks
@@ -76,6 +78,11 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 | 2026-10-08 | v2 scope confirmed: Qiskit editing, initial states, upload/download, autosave + undo + share URL, step-through, rotation sliders, subset partial trace, UI fixes | User request; deploy + audit after v2 |
 | 2026-10-08 | Final measurements are ignored with a warning (QASM + Qiskit); mid-circuit measurement is an error | Real-world files end with measurements; the spheres show the pre-measurement state |
 | 2026-10-08 | Security rules apply to all v2 code (no eval/innerHTML, validate files/URL/localStorage, size limits) | Audit and deployment follow v2 |
+| 2026-10-08 | V2-0 implements (not just stubs) `simulate` from initial states, `simulateSteps`, `validateCircuit` and the history store | Small, central and shared by several milestones; one implementation avoids parallel divergence. Subset/entropy stay stubs for V2-7 |
+| 2026-10-08 | `simulateSteps` numbering: step 0 = start state, step c+1 = after column c (`afterColumn` = step − 1); `AnalyzeRequest.step` uses the same numbering | One convention for engine, worker and timeline |
+| 2026-10-08 | `validateCircuit` always assigns fresh op ids and accepts a missing `initialStates` (= all \|0⟩); columns capped at `MAX_COLUMN` = 1000 | Never trust ids from outside; v1-shaped data still loads |
+| 2026-10-08 | Features needing their own result stream create their own `EngineClient` (own worker); `send()` + `onOtherResult` | Staleness is tracked per client, so steps/subset replies never drop the main analysis |
+| 2026-10-08 | Pushes use `gh` credentials (`git -c credential.helper='!gh auth git-credential' push`) | Git Credential Manager needs an interactive sign-in; `gh` is already authenticated |
 | 2026-10-08 | Generated "analysis tail" (Statevector/partial_trace lines) is ignored by the Qiskit parser | toQiskit output must parse with zero problems |
 
 ## Open questions
@@ -92,6 +99,7 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 - three.js chunk ~950 kB and Monaco chunk ~3.2 MB (both lazy) trip Vite's 500 kB warning — expected.
 - Monaco bundles its own codicon font under the same family name as @vscode/codicons; new app icons should be checked after Monaco loads.
 - Component tests: Testing Library auto-cleanup is off (no Vitest globals) → use `afterEach(cleanup)`.
+- `verify/.venv` is gitignored: recreate with `python -m venv verify/.venv` + `pip install -r verify/requirements.txt` (done 2026-10-08). Worktrees share main's `node_modules` and `verify/.venv` via directory junctions.
 - `useResultsStore.explicit` may lag one reply behind `selectedQubit` — check `explicit.qubit === selectedQubit`.
 
 ## Session log
@@ -101,3 +109,4 @@ v1 is complete on `main` (M0–M9 + independent review fixes). All milestone bra
 - 2026-10-06 — Wave 3: M7 sync + M8 teaching views merged via gate (542 tests).
 - 2026-10-07 — M9 finished by lead after the M9 agent hit a usage limit; all branches pushed; independent review (no blockers) → `fix-review` merged (785 tests). Known limit: at 1024×768 with 6 qubits the sphere grid wraps and scrolls.
 - 2026-10-08 — Reviewed v1 (two-way QASM sync confirmed working; user was likely typing in the read-only Qiskit tab). Wrote the full v2 spec (V2-0 … V2-9) in PLAN.md.
+- 2026-10-08 — v2 build started: spec committed, V2-0 contracts merged (832 tests, verify 378/378). Wave 1 launched.
