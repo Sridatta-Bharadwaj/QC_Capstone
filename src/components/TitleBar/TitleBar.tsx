@@ -76,7 +76,7 @@ export function TitleBar() {
   return (
     <header className="title-bar">
       <span className="codicon codicon-circuit-board title-bar__icon" aria-hidden="true" />
-      <h1 className="title-bar__title">QC Capstone</h1>
+      <h1 className="title-bar__title">QubitView</h1>
       <span className="title-bar__subtitle">Reduced density matrices on the Bloch sphere</span>
       <span className="title-bar__spacer" />
       <CircuitActions />
