@@ -1,4 +1,4 @@
-# QC Capstone — Reduced density matrices on the Bloch sphere
+# QubitView — Reduced density matrices on the Bloch sphere
 
 A browser tool that takes a multi-qubit quantum circuit, simulates it, isolates each qubit's
 reduced density matrix ρₖ by partial tracing, and shows every qubit's (possibly mixed) state on
