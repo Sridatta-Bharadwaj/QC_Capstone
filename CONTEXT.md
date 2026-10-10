@@ -151,3 +151,4 @@ v2 is complete on `main`: V2-0 … V2-8, the independent review (V2-9) and its f
 - 2026-10-08 — V2-3 merged (1998 tests, verify 519/519). All build milestones done; V2-9 review launched.
 - 2026-10-08 — V2-9: independent review (no blockers) → `v2-fix-review` merged with README, screenshots, DEMO.md. v2 complete: 2012 tests, verify 519/519 + 2965 subsets, preview offline (same-origin only). All branches on origin.
 - 2026-10-09 — Security audit + production readiness (planning chat): fixed the no-WebGL blank page (error boundaries + SVG sphere), CSP/security headers, deploy docs. 2029 tests, verify 519/519, 0 CSP violations. Ready to deploy.
+- 2026-10-10 — Title bar renamed "QC Capstone" → "QubitView" (`TitleBar/TitleBar.tsx`); browser tab title and README unchanged.
